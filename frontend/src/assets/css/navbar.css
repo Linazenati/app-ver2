@@ -1,0 +1,270 @@
+/* Variables */
+:root {
+    --bleu-fonce: #003366;
+    --jaune: #f1c40f;
+    --gris-clair: #f8f9fa;
+    --ombre: rgba(0, 0, 0, 0.1);
+}
+
+/* NAVBAR */
+.navbar {
+    background-color: var(--gris-clair);
+    box-shadow: 0 5px 15px var(--ombre);
+    padding: 10px 20px;
+    border-bottom: 4px solid var(--bleu-fonce);
+    z-index: 10;
+    padding-left: 10px;
+}
+
+
+
+.navbar-brand {
+    margin-right: auto;
+}
+
+.navbar-brand img {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.navbar-brand span {
+    color: var(--jaune);
+}
+
+.navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    color: var(--bleu-fonce) !important;
+    font-weight: bold;
+    padding: 8px 12px;
+    transition: all 0.3s ease-in-out;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--jaune) !important;
+}
+
+.nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--jaune);
+    transition: width 0.3s ease-in-out;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.dropdown-menu {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--ombre);
+    border: none;
+}
+
+.dropdown-item {
+    color: var(--bleu-fonce);
+    font-weight: 500;
+    padding: 10px 20px;
+}
+
+.dropdown-item:hover {
+    background-color: var(--jaune);
+    color: white;
+}
+
+/* Responsive Fix */
+@media (max-width: 768px) {
+    .navbar-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+}
+
+/* Correction pour icône Visa */
+.fas.fa-visa::before {
+    content: "\f5a4";
+}
+
+/* Code FontAwesome pour l’icône Visa */
+
+/* Ajustement du lien Contact */
+.navbar .nav-item:last-child .nav-link {
+    margin-right: 0;
+}
+
+.navbar-brand img {
+    height: 70px;
+    margin-right: 70px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.brand-text {
+    font-size: 24px;
+    font-weight: bold;
+    vertical-align: middle;
+    left: -10px
+}
+.navbar-brand span {
+    position: relative;
+    left: -5px;
+    /* Déplace chaque <span> de 5px vers la gauche */
+}
+/* Variables */
+:root {
+    --bleu-fonce: #003366;
+    --jaune: #f1c40f;
+    --gris-clair: #f8f9fa;
+    --ombre: rgba(0, 0, 0, 0.1);
+}
+
+/* NAVBAR */
+.navbar {
+    background-color: var(--gris-clair);
+    box-shadow: 0 5px 15px var(--ombre);
+    padding: 10px 20px;
+    border-bottom: 4px solid var(--bleu-fonce);
+    z-index: 10;
+    padding-left: 10px;
+}
+
+
+
+.navbar-brand {
+    margin-right: auto;
+}
+
+.navbar-brand img {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.navbar-brand span {
+    color: var(--jaune);
+}
+
+.navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-item {
+    position: relative;
+}
+
+.nav-link {
+    color: var(--bleu-fonce) !important;
+    font-weight: bold;
+    padding: 8px 12px;
+    transition: all 0.3s ease-in-out;
+}
+
+.nav-link:hover,
+.nav-link:focus {
+    color: var(--jaune) !important;
+}
+
+.nav-link::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background-color: var(--jaune);
+    transition: width 0.3s ease-in-out;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.dropdown-menu {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--ombre);
+    border: none;
+}
+
+.dropdown-item {
+    color: var(--bleu-fonce);
+    font-weight: 500;
+    padding: 10px 20px;
+}
+
+.dropdown-item:hover {
+    background-color: var(--jaune);
+    color: white;
+}
+
+/* Responsive Fix */
+@media (max-width: 768px) {
+    .navbar-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+
+    .nav-link::after {
+        display: none;
+    }
+}
+
+/* Correction pour icône Visa */
+.fas.fa-visa::before {
+    content: "\f5a4";
+}
+
+/* Code FontAwesome pour l’icône Visa */
+
+/* Ajustement du lien Contact */
+.navbar .nav-item:last-child .nav-link {
+    margin-right: 0;
+}
+
+.navbar-brand img {
+    height: 70px;
+    margin-right: 70px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.brand-text {
+    font-size: 24px;
+    font-weight: bold;
+    vertical-align: middle;
+    left: -10px
+}
+.navbar-brand span {
+    position: relative;
+    left: -5px;
+    /* Déplace chaque <span> de 5px vers la gauche */
+}

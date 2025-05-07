@@ -1,0 +1,8 @@
+npx sequelize-cli db:create
+npx sequelize-cli db:migrate
+
+//Supprimer toute la base de données (Dangeureux)
+npx sequelize-cli db:migrate:undo:all
+
+//Ensuite : 
+npx sequelize-cli db:migrate

@@ -1,0 +1,174 @@
+:root {
+    --jaune: #f4c430;
+    --bleu-fonce: #003566;
+    --gris-clair: #f7f7f7;
+    --blanc: #ffffff;
+    --ombre: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-logo {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.sidebar-logo img {
+    width: 80px;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 3px 8px var(--ombre);
+}
+
+.sidebar {
+    width: 250px;
+    height: calc(100vh - 70px);
+    position: fixed;
+    top: 70px;
+    left: 0;
+    overflow-y: auto;
+
+    padding: 8px;
+    background-color: var(--gris-clair);
+    color: var(--bleu-fonce);
+
+    border-right: 4px solid var(--bleu-fonce);
+    border-top: 4px solid var(--jaune);
+
+    box-shadow: 0 5px 15px var(--ombre);
+    font-weight: bold;
+}
+
+.sidebar-title {
+    font-size: 22px;
+    color: var(--bleu-fonce);
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sidebar-title span {
+    color: var(--jaune);
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-item {
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s ease-in-out;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--bleu-fonce);
+}
+
+.sidebar-item i {
+    margin-right: 10px;
+    color: var(--bleu-fonce);
+}
+
+.sidebar-item:hover {
+    background-color: var(--jaune);
+    color: white;
+}
+
+.sidebar-item:hover i {
+    color: white;
+}
+
+.chevron {
+    margin-left: auto;
+    font-size: 0.8rem;
+}
+
+.sidebar-dropdown {
+    padding-left: 20px;
+    margin-top: 5px;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+/* ➕ Sous-dropdown (pour Facebook/Instagram) : plus de retrait */
+.sidebar-sub-dropdown {
+    margin-top: 5px;
+    padding-left: 30px;
+    transition: max-height 0.3s ease;
+    overflow: hidden;
+}
+
+/* 🌑 Fond bleu foncé pour tous les sous-menus */
+.sidebar-dropdown li,
+.sidebar-sub-dropdown li {
+    background-color: var(--bleu-fonce);
+    border-radius: 5px;
+    margin: 4px 0;
+}
+
+/* 📎 Lien des sous-menus */
+.dropdown-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--blanc);
+    padding: 8px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    text-align: left;
+}
+
+/* ✅ Garder l'icône à gauche, texte bien aligné */
+.dropdown-link i {
+    min-width: 18px;
+    text-align: center;
+    color: var(--blanc);
+}
+
+/* Hover : fond jaune + texte bleu foncé */
+.dropdown-link:hover {
+    background-color: var(--jaune);
+    color: var(--bleu-fonce);
+}
+
+.dropdown-link:hover i {
+    color: var(--bleu-fonce);
+}
+
+/* 🎯 Cas spécifiques Facebook & Instagram */
+.sidebar-item.facebook,
+.sidebar-item.instagram {
+    color: var(--blanc);
+}
+
+.sidebar-item.facebook:hover,
+.sidebar-item.instagram:hover {
+    background-color: var(--jaune);
+    color: var(--bleu-fonce);
+}
+
+.sidebar-sub-dropdown li .dropdown-link.facebook,
+.sidebar-sub-dropdown li .dropdown-link.instagram {
+    color: var(--blanc);
+}
+
+/* Hover Facebook/Instagram */
+.sidebar-sub-dropdown li .dropdown-link.facebook:hover,
+.sidebar-sub-dropdown li .dropdown-link.instagram:hover {
+    background-color: var(--jaune);
+    color: var(--bleu-fonce);
+}
+
+.sidebar-sub-dropdown li .dropdown-link.facebook i,
+.sidebar-sub-dropdown li .dropdown-link.instagram i {
+    color: var(--blanc);
+}
+
+.sidebar-sub-dropdown li .dropdown-link.facebook:hover i,
+.sidebar-sub-dropdown li .dropdown-link.instagram:hover i {
+    color: var(--bleu-fonce);
+}

@@ -1,0 +1,32 @@
+.topbar {
+    height:70px;
+    width:100%;
+    background-color: var(--bleu-fonce);
+    border-top: 5px solid var(--jaune);
+    color: white;
+    padding: 8px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    position: fixed;
+}
+
+.topbar .slogan {
+    font-weight: 900px;
+}
+
+.topbar .right-side {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.topbar .contact-icon,
+.topbar .email-icon {
+    color: var(--jaune);
+}
+
+.contact-text {
+    margin-right: 15px;
+}

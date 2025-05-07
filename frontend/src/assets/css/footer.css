@@ -1,0 +1,161 @@
+/* Définition des couleurs personnalisées */
+:root {
+    --bleu-fonce: #003366;
+    --jaune: #f1c40f;
+}
+
+/* ======================= */
+/* Styles généraux du Footer */
+/* ======================= */
+.footer-front {
+    background-color: var(--bleu-fonce) !important;
+    color: #ffffff;
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.footer-front a {
+    color: var(--jaune);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+.footer-front a:hover {
+    color: var(--jaune);
+    text-decoration: underline;
+}
+
+/* Style de la marque du footer */
+.footer-front .navbar-brand h1 {
+    color: white;
+}
+
+.footer-front .navbar-brand h1 span {
+    color: white;
+}
+
+/* Paragraphe et texte */
+.footer-front p {
+    color: #ffffff;
+}
+
+/* ======================= */
+/* Boutons et Icônes sociales */
+/* ======================= */
+.footer-front .btn-outline-primary {
+    border: 1px solid var(--jaune);
+    color: var(--jaune);
+}
+
+.footer-front .btn-outline-primary:hover {
+    background-color: var(--jaune);
+    color: var(--bleu-fonce);
+}
+
+/* ======================= */
+/* Titres de sections */
+/* ======================= */
+.footer-front h5 {
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 5px;
+    margin-bottom: 20px;
+}
+
+/* ======================= */
+/* Input Newsletter */
+/* ======================= */
+.footer-front .form-control {
+    border: 1px solid var(--jaune);
+    background-color: transparent;
+    color: white;
+    padding: 20px;
+}
+
+.footer-front .form-control::placeholder {
+    color: white;
+    opacity: 0.7;
+}
+
+.footer-front .btn-primary {
+    background-color: var(--jaune);
+    border: none;
+    color: var(--bleu-fonce);
+}
+
+/* ======================= */
+/* Footer Bottom */
+/* ======================= */
+.footer-bottom {
+    background-color: var(--bleu-fonce);
+    color: #ffffff;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px 0;
+}
+
+.footer-bottom p {
+    margin: 0;
+}
+
+.footer-bottom a {
+    color: var(--jaune);
+}
+
+.footer-bottom a:hover {
+    color: var(--jaune);
+}
+
+/* ======================= */
+/* Ajustements pour la grille */
+/* ======================= */
+.footer-front .col-lg-3,
+.footer-front .col-md-6 {
+    margin-bottom: 30px;
+}
+
+
+/* Bouton "Back to Top" personnalisé */
+.btn-custom-top {
+  background-color: var(--jaune);
+  border: 1px solid var(--jaune);
+  width: 50px;                /* Largeur du bouton, à ajuster selon tes besoins */
+  height: 50px;               /* Hauteur du bouton, à ajuster selon tes besoins */
+  border-radius: 50%;         /* Pour un bouton circulaire */
+  color: var(--bleu-fonce);    /* Couleur de l'icône */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-custom-top:hover {
+  background-color: var(--bleu-fonce);
+  color: var(--jaune);
+}
+
+
+
+
+
+
+
+
+
+

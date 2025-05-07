@@ -1,0 +1,93 @@
+/* Définition des couleurs personnalisées */
+:root {
+    --bleu-fonce: #003366;
+    --jaune: #f1c40f;
+}
+
+/* Style général de la topbar */
+.container-fluid.bg-light.pt-3 {
+    background-color: var(--bleu-fonce) !important;
+    color: white;
+    padding: 10px 20px;
+}
+
+/* Alignement du texte et des liens dans la topbar */
+.container-fluid.bg-light.pt-3 .d-inline-flex p,
+.container-fluid.bg-light.pt-3 .d-inline-flex a {
+    color: white;
+    margin: 0;
+}
+
+/* Style des liens */
+.container-fluid.bg-light.pt-3 .d-inline-flex a {
+    padding: 0 10px;
+    text-decoration: none;
+    transition: none;
+}
+
+/* Style des icônes des réseaux sociaux */
+.container-fluid.bg-light.pt-3 .social-icon {
+    color: var(--jaune);
+    font-size: 18px;
+    padding: 0 10px;
+    transition: none;
+}
+
+.container-fluid.bg-light.pt-3 .social-icon:hover {
+    color: var(--jaune);
+}
+
+/* Alignement des boutons à droite */
+.container-fluid.bg-light.pt-3 .col-lg-6.d-flex.justify-content-end {
+    margin-left: auto;
+}
+
+/* Bouton personnalisé */
+.container-fluid.bg-light.pt-3 .btn-custom {
+    background-color: white;
+    color: var(--bleu-fonce);
+    border: 1px solid var(--jaune);
+    padding: 8px 16px;
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    min-width: 160px;
+    height: 40px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* Icône dans le bouton */
+.container-fluid.bg-light.pt-3 .btn-custom i {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+/* Hover = même style que normal */
+.container-fluid.bg-light.pt-3 .btn-custom:hover {
+    background-color: white;
+    color: var(--bleu-fonce);
+    border: 1px solid var(--jaune);
+}
+/* Bouton actif (après clic) */
+.container-fluid.bg-light.pt-3 .btn-custom.active {
+    background-color: var(--jaune);
+    color: var(--bleu-fonce);
+    border: 1px solid var(--jaune);
+}
+
+
+/* Responsive */
+@media (max-width: 991px) {
+    .container-fluid.bg-light.pt-3 .btn-custom {
+        min-width: auto;
+        padding: 6px 12px;
+        font-size: 14px;
+        height: auto;
+    }
+}
