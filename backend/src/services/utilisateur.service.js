@@ -30,7 +30,7 @@ const createUtilisateur = async (data) => {
     await Client.create({ id: utilisateur.id });
      
   };
-  return utilisateur;
+ 
   
 
   // Créer le rôle associé
