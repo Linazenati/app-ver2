@@ -12,10 +12,15 @@ const create = async (req, res) => {
 
   try {
     
-    const { titre, prix, date_de_depart,date_de_retour ,description , statut  } = req.body;
+    let { titre, prix, date_de_depart,date_de_retour ,description , statut , programme, excursions} = req.body;
     const images = req.files ? req.files.map(file => file.filename) : [];
+       // 1) JSON.parse() pour transformer chaque chaîne en objet JS
+    programme  = programme  ? JSON.parse(programme)  : [];
+    excursions = excursions ? JSON.parse(excursions) : [];
+
+    console.log("Fichiers reçus :", images);
 console.log("BODY:", req.body);
-console.log("FILES:", req.files);
+    console.log("FILES:", req.files);
     const voyage = await Voyage.create({
       titre,
       prix,
@@ -25,8 +30,12 @@ console.log("FILES:", req.files);
       image: JSON.stringify(images), // tu peux aussi stocker dans un autre champ comme `images`
       id_agent :20,
       statut,
+      programme ,
+      excursions ,
+    
        
-    });
+    });      console.log(voyage.image)
+
 
     res.status(201).json(voyage);
   } catch (err) {
@@ -91,9 +100,8 @@ const deletee= async (req, res) => {
 };
 
 // ✅ publier  un voyage sur fb
-const publishToSite = async (req, res,silent = false) => {
+const publishToSite = async (voyageId) => {
   try {
-    const voyageId = req.params.id;
     const voyage = await voyageService.getVoyageById(voyageId);
 
     if (!voyage) {
@@ -106,27 +114,59 @@ const publishToSite = async (req, res,silent = false) => {
       id_voyage: voyageId,
     });
     
+
+
     // Modifier voyage vers `est_Publie: true`)
     const updatedVoyage = await voyageService.updateVoyage(voyageId, { est_publier: true });
-    await voyageService.updateVoyage(voyageId,  "site");
-
     console.log("Voyage mis à jour : ", updatedVoyage);
-    
-  if (!silent) {
-      return res.status(200).json({ message: 'Voyage publié sur le site', voyage: updatedVoyage });
-    }
+        console.log("✅ Voyage marqué comme publié sur site:", updatedVoyage);
 
-    // Si silent == true, ne réponds pas au client ici.
-    return { message: 'Publié sur site',  voyage: updatedVoyage   };
+    return ({ message: 'Voyage publié sur le site', voyage: updatedVoyage });
 
   } catch (error) {
-    if (!silent) {
-      return res.status(500).json({ message: 'Erreur lors de la publication du voyage sur le site', error: error.message });
-    }
-    // En mode silencieux, on laisse le parent gérer l'erreur
-    throw error;
+    console.error("Erreur publication site :", error.message);
+    return ({ message: 'Erreur lors de la publication du voyage sur le site', error: error.message });
+  }
+
+};
+
+
+
+
+//publier Sur site seulement sans multiple
+const publierSurSiteSeule = async (req, res) => {
+  const voyageId = req.params.id;
+  try {
+    const result = await publishToSite(voyageId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
+
+//recupérer les voyages publier sur sites
+const getVoyagesPubliesSurSite = async (req, res) => {
+  try {
+    const publications = await publicationService.getAll({
+      plateforme: "site",
+    });
+
+    const idsVoyages = publications.map(pub => pub.id_voyage);
+
+    const voyages = await Voyage.findAll({
+      where: {
+        id: idsVoyages,
+        est_publier: true,
+        
+      }
+    });
+
+    res.status(200).json(voyages);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 
 // 🔄 Export
 module.exports = {
@@ -136,4 +176,6 @@ module.exports = {
   update,
     deletee,
   publishToSite,
+  publierSurSiteSeule,
+  getVoyagesPubliesSurSite
 };

@@ -10,7 +10,9 @@ const omraRouter = require("./omra.router");
 
 
 module.exports = (app) => {
-  app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+
+  app.use('/images', express.static(path.join(__dirname,  '..', 'public', 'images')));
+
       // 🔐 Auth (login/register)
     app.use("/api/v1/auth", authRouter);
 
@@ -42,7 +44,7 @@ module.exports = (app) => {
     });
 
   // 🌍 Catch all général (hors /api/v1) – utile pour SPA ou test
-    app.use("/*", (req, res) => {
+    app.use("/app/*", (req, res) => {
         res.json({ msg:"Hi" })
     });
 }

@@ -38,8 +38,21 @@ module.exports = (sequelize, DataTypes) => {
     },
    
     image: DataTypes.STRING,
-    id_agent: DataTypes.INTEGER
-  }, {
+    id_agent: DataTypes.INTEGER,
+    programme: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+    excursions: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+   
+  },
+  
+  
+    
+    {
     sequelize,
     modelName: 'Voyage',
   });

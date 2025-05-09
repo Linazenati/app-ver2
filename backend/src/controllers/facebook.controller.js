@@ -9,9 +9,8 @@ const { publishToFacebook , getPublications,recupererCommentaires,supprimerComme
 const { Voyage } = require('../models');
 
 // ✅ Publier un voyage sur Facebook
-const publierSurFacebook = async (req, res,silent = false) => {
+const publierSurFacebook = async (id) => {
   try {
-    const { id } = req.params;
 
     const voyage = await Voyage.findByPk(id);
     if (!voyage) {
@@ -52,7 +51,7 @@ const publierSurFacebook = async (req, res,silent = false) => {
 
     // ✅ Message à publier
     const message = `🌍 Nouveau voyage : ${voyage.titre}
-📍 Destination : ${voyage.destination}
+📍 Description: ${voyage.description}
 💰 Prix : ${voyage.prix} €
 📅 Date de départ : ${voyage.date_de_depart}
 📝 Description : ${voyage.description}`;
@@ -60,7 +59,7 @@ const publierSurFacebook = async (req, res,silent = false) => {
     // ✅ Publication sur Facebook
     const result = await publishToFacebook(voyage ,message, localImagePaths);
     console.log('📨 Réponse Facebook :', result);
-
+    
     // ✅ Enregistrement du post_id dans la BDD
     voyage.facebook_post_id = result.post_id || result.id;
     await voyage.save();
@@ -76,24 +75,29 @@ const publierSurFacebook = async (req, res,silent = false) => {
     const updatedVoyage = await voyageService.updateVoyage(id, { est_publier: true });
 
     console.log("Voyage mis à jour : ", updatedVoyage);
+        console.log("✅ Voyage marqué comme publié sur fb :",  result.post_id);
     
-    
-  if (!silent) {
-      return res.status(200).json({ message: 'Publié sur Facebook',  postId: result.post_id  });
-    }
+  // ✅ Envoyer réponse une seule fois
+  return ({ message: 'Publié sur Facebook', postId: result.post_id });
 
-    // Si silent == true, ne réponds pas au client ici.
-    return { message: 'Publié sur Facebook',  postId: result.post_id  };
-
-  } catch (error) {
-    if (!silent) {
-      return res.status(500).json({ message: 'Erreur Facebook', error: error.message });
-    }
-    // En mode silencieux, on laisse le parent gérer l'erreur
-    throw error;
-  }
+} catch (error) {
+  console.error("❌ Erreur lors de la publication :", error.message);
+  return ({ message: 'Erreur Facebook', error: error.message });
+}
 };
 
+
+// publier sur faceboook seulement sans multiple 
+// ✅ Route Express qui utilise req/res
+const publierSurFacebookSeule = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const result = await publierSurFacebook(id);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
 
 //recuperer tous les publications 
 const getAllPublications = async (req, res) => {
@@ -218,7 +222,8 @@ const { commentId } = req.params; // 🔁 Au lieu de req.params
 };
 
 module.exports = {
-    publierSurFacebook,
+  publierSurFacebook,
+  publierSurFacebookSeule,
   recupererCommentairesPublication,
     getNotificationsCount,
     resetNotificationsCount,

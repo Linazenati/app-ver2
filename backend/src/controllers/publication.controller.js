@@ -8,6 +8,9 @@ const voyageService = require("../services/voyageorganise.service");
 // Fonction pour publier un voyage sur plusieurs plateformes (site, Facebook, Instagram)
 const publierMulti = async (req, res) => {
   const id = req.params.id;
+  if (!id) {
+  return res.status(400).json({ message: "ID du voyage manquant dans l'URL" });
+}
   const { plateformes } = req.body; 
   const resultats = {};
 console.log("Plateformes reçues :", plateformes);
@@ -26,7 +29,7 @@ console.log("Plateformes reçues :", plateformes);
    //site
     if (plateformes.includes("site")) {
       try {
-        const siteRes = await siteController.publishToSite(req, res, true); // true = mode silencieux (pas res.json)
+        const siteRes = await siteController.publishToSite(voyage.id); // true = mode silencieux (pas res.json)
         resultats.site = siteRes;
       } catch (err) {
         resultats.site = { error: err.message };
@@ -36,7 +39,7 @@ console.log("Plateformes reçues :", plateformes);
     // Facebook
     if (plateformes.includes("facebook")) {
       try {
-        const fbRes = await facebookController.publierSurFacebook(req, res, true); // true = mode silencieux (pas res.json)
+        const fbRes = await facebookController.publierSurFacebook(voyage.id); // true = mode silencieux (pas res.json)
         resultats.facebook = fbRes;
       } catch (err) {
         resultats.facebook = { error: err.message };
@@ -46,7 +49,7 @@ console.log("Plateformes reçues :", plateformes);
     // Instagram
     if (plateformes.includes("instagram")) {
       try {
-        const instaRes = await instagramController.publierSurInstagram(req, res, true);
+        const instaRes = await instagramController.publierSurInstagram(voyage.id);
         resultats.instagram = instaRes;
       } catch (err) {
         resultats.instagram = { error: err.message };
@@ -59,9 +62,9 @@ console.log("Plateformes reçues :", plateformes);
       resultats
     });
 
-  } catch (error) {
-    console.error('Erreur publication multiple :', error);
-    res.status(500).json({ message: 'Erreur publication multiple', error: error.message });
+  } catch (err) {
+    console.error('Erreur publication multiple :', err.message);
+    res.status(500).json({ message: 'Erreur publication multiple', error:err.message });
   }
 };
 
@@ -72,26 +75,13 @@ console.log("Plateformes reçues :", plateformes);
 // ✅ Récupérer toutes les publications avec recherche, pagination, tri et filtre par type
 
   const getAll = async (req, res) => {
-    try {
-      // Récupère les paramètres de query dans l'URL (facultatifs)
-      const { search, limit, offset, orderBy, orderDir, plateforme, type } = req.query.params || {};;
-      console.log("Requête reçue avec query :", req.query.params);
-
-      const publications = await publicationService.getAll({
-        search,
-         plateforme,  // ⚠️ correspond bien à ce que le backend attend
-         type,   
-          limit,
-          offset,
-          orderBy,
-          orderDir,
-      });
-
-      res.status(200).json(publications);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
+  try {
+    const publications = await publicationService.getAll();
+    res.status(200).json(publications);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 
 // Récupère une publication par ID

@@ -19,7 +19,9 @@ router.put("/:id", voyageController.update);
 router.delete("/:id", voyageController.deletee);
 
 // ✏️ publier un voyage dans le site par ID
-router.post("/:id/publish", voyageController.publishToSite);
+router.post("/:id/publish", voyageController.publierSurSiteSeule);
 
+// 🔍 Récupérer les voyages publier sur site
+router.get('/publies/site', voyageController.getVoyagesPubliesSurSite);
 
 module.exports = router;

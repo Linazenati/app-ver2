@@ -11,10 +11,8 @@ const create = async (req, res) => {
     const data = {
       ...req.body,
       ...req.query, // au cas où l'appel vient d'un formulaire GET
-      
       role: 'agent'
     };
-
     console.log("Requête reçue pour création d'agent :", data); // Affiche les données envoyées
 
     const { email } = data;
@@ -24,8 +22,7 @@ const create = async (req, res) => {
     if (emailExistant) {
       return res.status(400).json({ message: "Un utilisateur avec cet email existe déjà." });
     }
-    console.log("Données envoyées pour createUtilisateur :", data);
-
+    
     const utilisateur = await utilisateurService.createUtilisateur(data);
     res.status(201).json(utilisateur);
   } catch (error) {

@@ -10,9 +10,8 @@ const voyageService = require("../services/voyageorganise.service");
 /**
  * Contrôleur pour publier un voyage sur Instagram en carrousel.
  */
-const publierSurInstagram = async (req, res,silent = false) => {
+const publierSurInstagram = async (id) => {
   try {
-    const { id } = req.params;
     // 1️⃣ Récupération du voyage
     const voyage = await Voyage.findByPk(id);
     if (!voyage) return res.status(404).json({ message: 'Voyage introuvable' });
@@ -67,25 +66,28 @@ const publierSurInstagram = async (req, res,silent = false) => {
 
     
     console.log("Voyage mis à jour : ", updatedVoyage);
+        console.log("✅ Voyage marqué comme publié sur instagram :",  result.post_id);
 
+return ({ message: 'Publié sur Instagram', instagram_post_id: result.post_id });
 
-
-   if (!silent) {
-      return res.status(200).json({ message: 'Publié sur instagram',  instagram_post_id: result.post_id });
-    }
-
-    // Si silent == true, ne réponds pas au client ici.
-    return { message: 'Publié sur instagram',  instagram_post_id: result.post_id  };
-
-  } catch (error) {
-    if (!silent) {
-      return res.status(500).json({ message: 'Erreur instagram', error: error.message });
-    }
-    // En mode silencieux, on laisse le parent gérer l'erreur
-    throw error;
-  }
+} catch (error) {
+  console.error("Erreur Instagram :", error.message);
+  return ({ message: 'Erreur Instagram', error: error.message });
+}
 };
 
+
+
+//publier instagram seulement sans multiple
+const publierSurInstagralSeule = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const result = await publierSurInstagram(id);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
 
 //recuperer tous les publications 
 const getAllInstagramPublications = async (req, res) => {
@@ -207,7 +209,8 @@ try {
 
 module.exports =
 {
-    publierSurInstagram,
+  publierSurInstagram,
+  publierSurInstagralSeule,
     recupererCommentairesPublication,
      getNotificationsCount,
     resetNotificationsCount,
