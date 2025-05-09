@@ -20,10 +20,9 @@ import VoyageOrganisés from "./VoyagesOrganisés"
 import Assurance from"./Assurance"
 import Connexion from "./Connexion"
 import Inscription from "./Inscription"
-import Mon_espace from "./Mon-espace"
 import "../../assets/fo/css/style.min.css"
-
-
+import Voyage from "./list-voyages"
+import Infos_Voyage from "./infos_voyage"
 
 const Index = () => {
   useEffect(() => {
@@ -97,8 +96,10 @@ const Index = () => {
         <Route path="/voyagesOrganisés" element={<VoyageOrganisés />} />
         <Route path="/assurance" element={<Assurance />} />
         <Route path="/inscription" element={<Inscription />} />
-        <Route path="/Mon_espace" element={<Mon_espace />} />
         <Route path="/connexion" element={<Connexion />} />
+        <Route path="/voyage" element={<Voyage />} />
+        <Route path="/infos_voyage/:id"  element={<Infos_Voyage/>}/>
+
       </Routes>
 
       <Footer />

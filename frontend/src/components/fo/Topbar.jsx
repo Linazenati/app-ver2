@@ -1,13 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
-import { FaUser } from "react-icons/fa";
-import { FaSignOutAlt } from 'react-icons/fa';
 
 import "../../assets/css/topbar.css";
 
 function Topbar() {
-  const { user, logout } = useUser();
+const { user, logout } = useUser();
 
   const location = useLocation();
   // Comparaison en minuscules pour éviter les problèmes de casse
@@ -36,15 +34,15 @@ function Topbar() {
 
             {user === null ? (
               <>
-                <Link
-                  to="/web/Connexion"
+                <Link 
+                  to="/web/Connexion" 
                   className={`btn-custom ${currentPath === '/web/connexion' ? 'active' : ''}`}
                 >
                   <i className="fa fa-user"></i> Se Connecter
                 </Link>
 
-                <Link
-                  to="/web/Inscription"
+                <Link 
+                  to="/web/Inscription" 
                   className={`btn-custom ${currentPath === '/web/inscription' ? 'active' : ''}`}
                 >
                   <i className="fa fa-user-plus"></i> S'inscrire
@@ -52,19 +50,12 @@ function Topbar() {
               </>
             ) : (
               <>
-                <Link to="/web/Mon_espace" className="btn-custom ml-2 flex items-center gap-1">
-                  <FaUser />
-                  Mon espace
+                <span>Bonjour {user.utilisateur.nom+" "+user.utilisateur.prenom} ({user.utilisateur.role})</span>
+                <Link 
+                     to="/web/"  className="btn-custom"  onClick={logout}  >
+                      <i className="fa fa-sign-out-alt"></i> Se Déconnecter
                 </Link>
-                <Link
-                  to="/web/"
-                  className="btn-custom flex items-center gap-1"
-                  onClick={logout}
-                >
-                  <FaSignOutAlt />
-                  Se Déconnecter
-                </Link>
-              </>
+              </>              
             )}
           </div>
         </div>

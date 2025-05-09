@@ -70,14 +70,14 @@ function Navbar() {
                 </Link>
                 <ul className="dropdown-menu" aria-labelledby="offresDropdown">
                   <li><Link to="/web/Omra" className="dropdown-item">Omra</Link></li>
-                  <li><Link to="/web/VoyagesOrganisés" className="dropdown-item">Voyages Organisés</Link></li>
+                  <li><Link to="/web/Voyage" className="dropdown-item">Voyages Organisés</Link></li>
                 </ul>
               </div>
 
               <Link to="/web/Assurance" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
                 <i className="fas fa-shield-alt mr-2"></i> Assurance
               </Link>
-              <Link to="/web/contact" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
+              <Link to="/web/infos_voyage" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
                 <i className="fas fa-phone-alt mr-2"></i> Contact
               </Link>
             </div>
