@@ -23,7 +23,7 @@ import Inscription from "./Inscription"
 import "../../assets/fo/css/style.min.css"
 import Voyage from "./list-voyages"
 import Infos_Voyage from "./infos_voyage"
-
+import Contact from "./contact"
 const Index = () => {
   useEffect(() => {
     const scripts = [
@@ -99,7 +99,7 @@ const Index = () => {
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/voyage" element={<Voyage />} />
         <Route path="/infos_voyage/:id"  element={<Infos_Voyage/>}/>
-
+         <Route path="/contact" element={<Contact />} />
       </Routes>
 
       <Footer />

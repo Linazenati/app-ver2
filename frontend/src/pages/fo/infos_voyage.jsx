@@ -24,32 +24,35 @@ const Infos_Voyage = () => {
   useEffect(() => {
     const fetchVoyage = async () => {
       try {
-        const response = await voyageService.getById(id);
-        const data = response.data;
+        console.log("ID voyage reçu :", id);
+        const response = await voyageService.getVoyagePublieAvecCommentaires(id);
+        console.log("Réponse backend :", response);
+      const { voyage, commentairesSocial } = response.data;
+
 
         let programme = [];
         let excursions = [];
         let conditions = [];
 
         try {
-          programme = data.programme ? JSON.parse(data.programme) : [];
+          programme = voyage.programme ? JSON.parse(voyage.programme) : [];
         } catch (err) {
           console.error("Erreur parsing programme :", err);
         }
 
         try {
-          excursions = data.excursions ? JSON.parse(data.excursions) : [];
+          excursions = voyage.excursions ? JSON.parse(voyage.excursions) : [];
         } catch (err) {
           console.error("Erreur parsing excursions :", err);
         }
 
         try {
-          conditions = data.conditions ? JSON.parse(data.conditions) : [];
+          conditions = voyage.conditions ? JSON.parse(voyage.conditions) : [];
         } catch (err) {
           console.error("Erreur parsing conditions :", err);
         }
 
-        setVoyage({ ...data, programme, excursions, conditions });
+        setVoyage({ ...voyage, programme, excursions, conditions });
       } catch (error) {
         console.error("Erreur lors de la récupération du voyage :", error);
       } finally {

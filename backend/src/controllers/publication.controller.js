@@ -96,8 +96,30 @@ const getById = async (req, res) => {
   }
 };
 
+
+// ✅ Récupérer les publications d'un voyage publié par ID
+const getPublicationsByVoyageId = async (req, res) => {
+  const voyageId = req.params.id;
+  
+  try {
+    // Vérifie que le voyage est publié
+    const voyage = await voyageService.getVoyageById(voyageId);
+    if (!voyage || !voyage.est_publier) {
+      return res.status(404).json({ message: "Voyage non trouvé ou non publié" });
+    }
+
+    // Récupère les publications liées à ce voyage
+    const publications = await publicationService.getPublicationsByVoyageId(voyageId);
+    res.status(200).json(publications);
+    
+  } catch (error) {
+    console.error('Erreur récupération des publications :', error.message);
+    res.status(500).json({ message: 'Erreur lors de la récupération des publications', error: error.message });
+  }
+};
 module.exports = {
   publierMulti,
   getAll,
-  getById
+  getById,
+  getPublicationsByVoyageId
 };

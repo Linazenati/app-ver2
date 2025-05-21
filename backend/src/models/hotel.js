@@ -10,20 +10,23 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-    Hotel.hasMany(models.Reservation,
+        // Relation avec Ville
+       
+
+        Hotel.hasMany(models.Reservation,
         {
-          foreignKey: ' id_hotel',
-          as: 'hotel'});  // clé étrangère 
-  
+            foreignKey: ' id_hotel',
+          as: 'hotel'
+        });  // clé étrangère 
+    
+      } 
     }
-  }
   Hotel.init({
     nom: DataTypes.STRING,
     adresse: DataTypes.STRING,
-    ville: DataTypes.STRING,
     prix_par_nuit: DataTypes.DECIMAL,
     date_disponibilite: DataTypes.DATE,
-    photo: DataTypes.STRING
+    photo: DataTypes.STRING,
   }, {
     sequelize,
     modelName: 'Hotel',

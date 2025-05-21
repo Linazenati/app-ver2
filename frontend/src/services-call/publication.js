@@ -15,4 +15,8 @@ publicationService.getAll = (params) =>  api.get(`${API_POINT}`, { params  });
 publicationService.getById = (id) =>
   api.get(`${API_POINT}/${id}`);
 
+  // 📥 Récupérer les publications d'un voyage publié (par ID)
+publicationService.getPublicationsByVoyageId = (id) =>
+  api.get(`${API_POINT}/voyages/${id}/publications`);
+  
 export default publicationService;

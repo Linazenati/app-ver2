@@ -44,8 +44,21 @@ module.exports = (sequelize, DataTypes) => {
     },
     id_voyage: DataTypes.INTEGER,
     id_omra: DataTypes.INTEGER,
-    id_post_facebook: DataTypes.INTEGER,
-    id_post_instagram: DataTypes.INTEGER
+    id_post_facebook: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
+    id_post_instagram: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    },   
+
+    // Exemple avec Sequelize
+url_post: {
+  type: DataTypes.STRING,
+  allowNull: true,
+    }
+
   }, {
     sequelize,
     modelName: 'Publication',

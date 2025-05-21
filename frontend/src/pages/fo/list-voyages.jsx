@@ -16,22 +16,49 @@ const VoyageList = () => {
   const [voyages, setVoyages] = useState([]);
   const [currentPage, setCurrentPage] = useState(1); // Page courante
   const [voyagesPerPage] = useState(6); // Nombre de voyages par page
-
+const [commentsByVoyage, setCommentsByVoyage] = useState({});
   // Fonction pour charger les voyages depuis l'API
-  useEffect(() => {
-    const fetchVoyages = async () => {
-      try {
-        const response = await voyageService.getVoyagesPubliesSurSite();
-          console.log('Voyages récupérés:', response.data); // Affiche les données dans la console
-        setVoyages(response.data); // Axios retourne les données dans `.data`
-      } catch (error) {
-        console.error('Erreur lors de la récupération des voyages publiés:', error);
-      }
+useEffect(() => {
+  async function fetchAll() {
+    try {
+      const resp = await voyageService.getVoyagesPubliesSurSite();
+      const list = resp.data;
+        console.log('Voyages récupérés:', list);
+      const results = await Promise.allSettled(
+       list.map(v => voyageService.getVoyagePublieAvecCommentaires(v.id))
+      );
+
+      const map = {};
+     results.forEach((res, idx) => {
+  const vid = list[idx].id;
+  if (res.status === 'fulfilled') {
+    const data = res.value.data; // <-- Il faut stocker data ici !
+    console.log(`Commentaires pour le voyage ${vid}:`, data);
+    map[vid] = {
+      commentairesFacebook: data.commentairesFacebook || [],
+      commentairesInstagram: data.commentairesInstagram || [],
+      urlPostFacebook: data.urlPostFacebook || null,       // <-- ici !
+      urlPostInstagram: data.urlPostInstagram || null,     // <-- ici !
     };
+  } else {
+    console.warn(`Échec pour ${vid}`, res.reason);
+    map[vid] = {
+      commentairesFacebook: [],
+      commentairesInstagram: [],
+      urlPostFacebook: null,
+      urlPostInstagram: null,
+    };
+  }
+});
 
-    fetchVoyages();
-  }, []);
-
+      setVoyages(list);
+      setCommentsByVoyage(map);
+    } catch (err) {
+      console.error('Erreur globale fetchAll :', err);
+    }
+  }
+  fetchAll();
+}, []);
   // Calculer les voyages à afficher sur la page actuelle
   const indexOfLastVoyage = currentPage * voyagesPerPage;
   const indexOfFirstVoyage = indexOfLastVoyage - voyagesPerPage;
@@ -47,7 +74,14 @@ const VoyageList = () => {
     <div>
       <GridContainer>
         {currentVoyages.map(voyage => (
-          <VoyageCard key={voyage.id} voyage={voyage} />
+   <VoyageCard
+  key={voyage.id}
+  voyage={voyage}
+  commentairesFacebook={commentsByVoyage[voyage.id]?.commentairesFacebook || []}
+  commentairesInstagram={commentsByVoyage[voyage.id]?.commentairesInstagram || []}
+  urlPostFacebook={commentsByVoyage[voyage.id]?.urlPostFacebook || null}
+  urlPostInstagram={commentsByVoyage[voyage.id]?.urlPostInstagram || null}
+/>
         ))}
       </GridContainer>
 

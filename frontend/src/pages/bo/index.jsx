@@ -12,6 +12,7 @@ import Creer_omra from "./creer-omra"
 import Liste_omra from "./liste_omra"
 import Creer_voyage from "./creer-voyage"
 import Liste_publication from "./list_publication"
+import List_voyages from "./list-voyages"
 
 const Index = () => {
   return (
@@ -19,7 +20,7 @@ const Index = () => {
       
       <Topbar/>
       <Sidebar /> 
-      <div className="bo-main-content">
+<div className="bo-main-content" >
         <Routes>
           <Route path="/agent" element={< Agent />} />
           <Route path="/utilisateurs" element={< Utilisateurs />} />
@@ -28,6 +29,9 @@ const Index = () => {
           <Route path="/Liste_omra" element={<Liste_omra />} />
           <Route path="/creer-voyage" element={<Creer_voyage />} />
           <Route path="/liste-publication" element={<Liste_publication />} />
+      
+            <Route path="/liste-voyages" element={  <List_voyages /> } />
+          
 
       </Routes>
       </div>

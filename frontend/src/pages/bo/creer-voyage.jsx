@@ -15,6 +15,11 @@ import { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import voyageService from "../../services-call/voyage";
 import publicationService from "../../services-call/publication";
+import dayjs from 'dayjs';  // si tu utilises dayjs (Ant Design 5+)
+import 'dayjs/locale/fr';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+dayjs.locale('fr');
+dayjs.extend(localizedFormat);
 
 export default function CreerVoyage() {
   const [form] = Form.useForm();
@@ -32,11 +37,9 @@ export default function CreerVoyage() {
     formData.append("prix", values.prix);
     formData.append("date_de_depart", values.date_de_depart.format("YYYY-MM-DD"));
     formData.append("date_de_retour", values.date_de_retour.format("YYYY-MM-DD"));
-    formData.append("duree", values.duree);
     formData.append("statut", values.statut || "disponible");
     formData.append("programme", JSON.stringify(values.programme));
     formData.append("excursions", JSON.stringify(values.excursions));
-    formData.append("conditions", JSON.stringify(values.conditions));
 
     console.log("Avant l'envoi, voici les images : ", imageFiles);
     imageFiles.forEach((file) => {
@@ -97,7 +100,31 @@ export default function CreerVoyage() {
       return p.toLowerCase();
     });
   };
+const handlePublish = async (createdVoyageId, platforms) => {
+  const mapped = mapPlatforms(platforms);
 
+  try {
+    const res = await publicationService.publierMulti(createdVoyageId, mapped);
+    console.log("Résultat publication :", res.data);
+
+    const resultats = res.data.resultats;
+
+    // 🔁 Affichage toast pour chaque plateforme
+    Object.entries(resultats).forEach(([platform, result]) => {
+      if (result?.error) {
+        toast.error(`Échec de publication sur ${platform} : ${result.error}`);
+      } else {
+        toast.success(`Publication réussie sur ${platform}`);
+      }
+    });
+
+  } catch (err) {
+    console.error("Erreur publication multiple :", err.message);
+    toast.error("Erreur globale lors de la publication");
+  }
+};
+  
+  
   return (
     <>
       <Toaster position="top-right" />
@@ -123,17 +150,14 @@ export default function CreerVoyage() {
           <InputNumber min={0} style={{ width: "100%" }} />
         </Form.Item>
 
-        <Form.Item name="date_de_depart" label="Date de départ" rules={[{ required: true }]}>
-          <DatePicker style={{ width: "100%" }} />
-        </Form.Item>
+        
+        <Form.Item name="date_de_depart"  label="Date de départ" rules={[{ required: true }]}>
+                 <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+          </Form.Item>
 
-        <Form.Item name="date_de_retour" label="Date de retour" rules={[{ required: true }]}>
-          <DatePicker style={{ width: "100%" }} />
-        </Form.Item>
-
-        <Form.Item name="duree" label="Durée (en jours)" rules={[{ required: true }]}>
-          <InputNumber min={1} style={{ width: "100%" }} />
-        </Form.Item>
+       <Form.Item name="date_de_retour"  label="Date de retour" rules={[{ required: true }]}>
+             <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
+          </Form.Item>
 
         <Form.Item name="statut" label="Statut" initialValue="disponible">
           <Select>
@@ -263,32 +287,19 @@ export default function CreerVoyage() {
             Plus tard
           </Button>,
           <Button
-            key="publish"
-            type="primary"
-            onClick={async () => {
-              if (!createdVoyageId || platforms.length === 0) {
-                toast.error("Veuillez sélectionner une plateforme.");
-                return;
-              }
-
-              const mapped = mapPlatforms(platforms);
-              try {
-                const res = await publicationService.publierMulti(
-                  createdVoyageId,
-                  mapped
-                );
-                console.log("Résultat publication :", res.data);
-                toast.success("🎉 Publication réussie !");
-              } catch (err) {
-                console.error(err);
-                toast.error("❌ Erreur lors de la publication !");
-              } finally {
-                setModalVisible(false);
-              }
-            }}
-          >
-            Publier
-          </Button>,
+  key="publish"
+  type="primary"
+  onClick={async () => {
+    if (!createdVoyageId || platforms.length === 0) {
+      toast.error("Veuillez sélectionner une plateforme.");
+      return;
+    }
+    await handlePublish(createdVoyageId, platforms);
+    setModalVisible(false);
+  }}
+>
+  Publier maintenant
+</Button>
         ]}
       >
         <p>Souhaitez-vous le publier maintenant ?</p>

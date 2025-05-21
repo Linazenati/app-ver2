@@ -153,6 +153,13 @@ main {
 
 
 
+.bo-main-content {
+    margin-top: 80px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    /* Gris clair */
+    min-height: 100vh;
+}
 
 
 

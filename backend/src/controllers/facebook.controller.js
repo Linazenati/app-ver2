@@ -4,7 +4,8 @@ const { PAGE_ACCESS_TOKEN, GRAPH_API_VERSION , PAGE_ID } = require('../config/fa
 const publicationService = require('../services/publication.service');
 const voyageService = require("../services/voyageorganise.service");
 
-const { publishToFacebook , getPublications,recupererCommentaires,supprimerCommentaire, masquerCommentaire ,recupererLikes} = require('../services/facebook.service');
+const { publishToFacebook , getPublications,recupererCommentaires,supprimerCommentaire, masquerCommentaire ,recupererLikes,  verifierPublicationFacebook
+} = require('../services/facebook.service');
 
 const { Voyage } = require('../models');
 
@@ -15,16 +16,16 @@ const publierSurFacebook = async (id) => {
     const voyage = await Voyage.findByPk(id);
     if (!voyage) {
       console.error('Voyage non trouvé');
-      return res.status(404).json({ message: "Voyage introuvable" });
+  throw new Error("Voyage introuvable");
     }
 
     console.log('Voyage récupéré :', voyage);
 
-    // 🛑 Vérifier s’il est déjà publié
-    if (voyage.facebook_post_id) {
-      return res.status(400).json({ message: 'Ce voyage a déjà été publié sur Facebook.' });
-    }
-
+    // 2. Vérifier si publication Facebook existe déjà
+    const publicationExistante = await publicationService.getByPlatformAndVoyage('facebook', id);
+    if (publicationExistante) {
+  throw new Error('Ce voyage a déjà été publié sur Facebook.');
+    } 
     // ✅ Parse le champ image (un seul tableau JSON stringifié)
     let images = [];
     try {
@@ -54,21 +55,35 @@ const publierSurFacebook = async (id) => {
 📍 Description: ${voyage.description}
 💰 Prix : ${voyage.prix} €
 📅 Date de départ : ${voyage.date_de_depart}
-📝 Description : ${voyage.description}`;
-
+📅 Date de retour : ${voyage.date_de_retour}
+🔗 Réservez votre place ici : https://1ed6-154-248-34-163.ngrok-free.app/web/infos_voyage/${voyage.id}`;
+    
     // ✅ Publication sur Facebook
     const result = await publishToFacebook(voyage ,message, localImagePaths);
     console.log('📨 Réponse Facebook :', result);
     
+    
+
+    // ✅ Vérification avant l'enregistrement
+    const existeSurFacebook = await verifierPublicationFacebook(result.post_id);
+    if (!existeSurFacebook) {
+      console.warn("⚠️ La publication n'existe pas sur Facebook, annulation de l'enregistrement.");
+      return { message: 'Échec de la publication sur Facebook. Vérifiez l\'ID.' };
+    }
+
+
+
     // ✅ Enregistrement du post_id dans la BDD
     voyage.facebook_post_id = result.post_id || result.id;
     await voyage.save();
+
 
     //insérer dans la table publication
     await publicationService.publier({
       plateforme: 'facebook',
       id_voyage: id,
-      id_post_facebook:result.post_id || result.id
+      id_post_facebook: result.post_id || result.id,
+      url_post: `https://www.facebook.com/${result.post_id || result.id}`
     });
 
     // Modifier voyage vers `est_Publie: true`)
@@ -114,15 +129,12 @@ const getAllPublications = async (req, res) => {
 let notificationsCount = 0;
 let anciensCommentairesIds = [];
 const recupererCommentairesPublication = async (req, res) => {
- const { facebook_post_id } = req.params;
-  const cleanPostId = facebook_post_id.trim();
+ const { id_post_facebook } = req.params;
+  const cleanPostId = id_post_facebook.trim();
 
   console.log('ID de la publication Facebook:', cleanPostId);
-
-  try {
-    if (!cleanPostId) {
-      return res.status(400).json({ message: 'Le facebook_post_id est nécessaire pour récupérer les commentaires' });
-    }
+try {
+   
 
     const commentaires = await recupererCommentaires(cleanPostId);
 
@@ -173,14 +185,14 @@ const resetNotificationsCount = (req, res) => {
 
 // 📝 Récupérer les nmbr likes d'une publication
 const recupererLikesPublication = async (req, res) => {
-  const { facebook_post_id } = req.params;
+  const { id_post_facebook } = req.params;
 
-console.log('ID de la publication Facebook:', facebook_post_id);
+console.log('ID de la publication Facebook:',id_post_facebook);
 
 try {
   
     // Récupérer les likes en fonction de facebook_post_id
-    const likes = await recupererLikes(facebook_post_id);  // Appeler la fonction pour récupérer les likes
+    const likes = await recupererLikes(id_post_facebook);  // Appeler la fonction pour récupérer les likes
     res.status(200).json(likes);  // Retourner les likes
   } catch (error) {
     res.status(500).json({ message: error.message });  // Gestion des erreurs

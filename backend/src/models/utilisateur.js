@@ -39,6 +39,11 @@ module.exports = (sequelize, DataTypes) => {
     role: {
       type: DataTypes.ENUM('administrateur', 'client', 'agent','Utilisateur_inscrit'),
       allowNull: false
+    },
+    dateDerniereConnexion: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null
     }
   }, {
     sequelize,

@@ -10,7 +10,7 @@ router.post("/:id/publier", facebookController.publierSurFacebookSeule);
 router.get('/publications', facebookController.getAllPublications);
 
 // recuperer tous les commentaires d'une pub
-router.get('/:facebook_post_id/commentaires',facebookController.recupererCommentairesPublication)
+router.get('/:id_post_facebook/commentaires',facebookController.recupererCommentairesPublication)
 
 // 🔔 Récupérer le nombre actuel de notifications (nouveaux commentaires détectés)
 router.get('/notifications/count', facebookController.getNotificationsCount);
@@ -19,7 +19,7 @@ router.get('/notifications/count', facebookController.getNotificationsCount);
 router.post('/notifications/reset', facebookController.resetNotificationsCount); // si tu veux remettre à 0
 
 // recuperer tous les likes d'une pub
-router.get('/:facebook_post_id/likes',facebookController.recupererLikesPublication)
+router.get('/:id_post_facebook/likes',facebookController.recupererLikesPublication)
 
 
 // ✅ Supprimer un commentaire

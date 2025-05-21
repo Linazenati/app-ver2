@@ -48,20 +48,58 @@ console.log("BODY:", req.body);
 // ✅ Récupérer tous les voyages (avec recherche, pagination, tri)
 const getAll = async (req, res) => {
   try {
-    // Récupère les paramètres de query dans l'URL (facultatifs)
-    const { search, limit, offset, orderBy, orderDir } = req.query;
+    const {
+      search,
+      limit = 50,
+      offset = 0,
+      orderBy = 'createdAt',
+      orderDir = 'ASC',
+      plateforme,
+      est_publier,
+      annee_de_depart,
+      mois_de_depart
+    } = req.query;
 
-    const voyages = await voyageService.getAllVoyages({
+    // 🛡️ Validation plateforme/est_publier
+    if (plateforme && est_publier !== 'true') {
+      return res.status(400).json({
+        success: false,
+        message: "Le filtre plateforme nécessite est_publier=true"
+      });
+    }
+
+    const result = await voyageService.getAllVoyages({
       search,
       limit,
       offset,
       orderBy,
-      orderDir
+      orderDir,
+      plateforme,
+      est_publier,
+      annee_de_depart,
+      mois_de_depart
     });
 
-    res.status(200).json(voyages);
+    // 🧹 Nettoyage des données si est_publier=false
+    const cleanedData = est_publier === 'true' 
+      ? result.data 
+      : result.data.map(v => {
+          const { publications, ...rest } = v.get({ plain: true });
+          return rest;
+        });
+
+    res.json({
+      success: true,
+      total: result.total,
+      data: cleanedData
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Erreur contrôleur:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur serveur'
+    });
   }
 };
 
@@ -81,6 +119,7 @@ const getById = async (req, res) => {
 
 // ✅ Mettre à jour un voyage
 const update = async (req, res) => {
+        console.log("ID reçu pour update :", req.params.id); // AJOUTE CECI
   try {
     const updatedVoyage = await voyageService.updateVoyage(req.params.id, req.body);
     res.status(200).json(updatedVoyage);
@@ -90,7 +129,8 @@ const update = async (req, res) => {
 };
 
 // ✅ Supprimer un voyage
-const deletee= async (req, res) => {
+const remove = async (req, res) => {
+    console.log("ID reçu pour delete :", req.params.id); // AJOUTE CECI
   try {
     await voyageService.deleteVoyage(req.params.id);
     res.status(200).json({ message: "Voyage supprimé avec succès" });
@@ -108,11 +148,17 @@ const publishToSite = async (voyageId) => {
       return res.status(404).json({ message: "Voyage non trouvé" });
     }
 
+    // 2. Vérifier si publication Facebook existe déjà
+    const publicationExistante = await publicationService.getByPlatformAndVoyage('site', voyageId);
+    if (publicationExistante) {
+      return res.status(400).json({ message: 'Ce voyage a déjà été publié sur site.' });
+    }  
+
   //insérer dans la table publication
     await publicationService.publier({
       plateforme: 'site',
       id_voyage: voyageId,
-    });
+    }); 
     
 
 
@@ -159,14 +205,33 @@ const getVoyagesPubliesSurSite = async (req, res) => {
         est_publier: true,
         
       }
+      
     });
+    // Ajout du chemin complet pour chaque image
+const voyagesAvecImages = voyages.map(voyage => {
+  const images = JSON.parse(voyage.image || '[]');
+  return {
+    ...voyage.get({ plain: true }),
+    images: images.map(img => `http://localhost:3000/images/${img}`)
+  };
+});
 
-    res.status(200).json(voyages);
+    res.status(200).json(voyagesAvecImages);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+
+const getDetailsVoyages = async (req, res) => {
+  try {
+    const voyageId = req.params.id;
+    const result = await voyageService.getVoyageAvecCommentairesSelectionnes(voyageId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // 🔄 Export
 module.exports = {
@@ -174,8 +239,9 @@ module.exports = {
   getAll,
   getById,
   update,
-    deletee,
+    remove,
   publishToSite,
   publierSurSiteSeule,
-  getVoyagesPubliesSurSite
+  getVoyagesPubliesSurSite,
+  getDetailsVoyages
 };

@@ -18,8 +18,20 @@ module.exports = (sequelize, DataTypes) => {
   Commentaire.init({
     date_commentaire: DataTypes.DATE,
     contenu: DataTypes.STRING,
-    id_publication: DataTypes.INTEGER
-  }, {
+    id_publication: DataTypes.INTEGER,
+    id_commentaire_instagram: {  // Nouvelle colonne pour stocker l'ID Instagram du commentaire
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    id_commentaire_facebook: {  // Nouvelle colonne pour stocker l'ID Instagram du commentaire
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    est_selectionne: {         // <-- ta colonne sélection
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  }  }, {
     sequelize,
     modelName: 'Commentaire',
   });

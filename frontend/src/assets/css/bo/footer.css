@@ -32,7 +32,7 @@
 
  .bo-main-content {
   margin-left: 250px; /* laisse place à la sidebar */
- padding: 80px 20px 100px;/* padding bas pour ne pas cacher le contenu sous le footer */  
+ padding: 120px 20px 100px;/* padding bas pour ne pas cacher le contenu sous le footer */  
   background-color: #f5f5f5;
   min-height: 100vh;
   box-sizing: border-box;

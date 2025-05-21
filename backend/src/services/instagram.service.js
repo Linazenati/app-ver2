@@ -2,46 +2,58 @@
 
 const axios = require('axios');
 const { IG_ACCESS_TOKEN, INSTAGRAM_USER_ID, GRAPH_API_VERSION } = require('../config/instagram.config');
-
+const { sauvegarderCommentaires , supprimerCommentaireEnBase} = require('./commentaire.service');
+const { Publication , Commentaire} = require('../models');
 /**
  * Crée un container média pour une image (carousel item) sur Instagram.
  * @param {string} imageUrl - URL publique de l'image
  * @returns {Promise<string>} - ID du container créé
  */
-async function createMediaContainer(imageUrl) {
+
+
+async function createMediaContainer(imageUrl, isCarouselItem = false) {
   const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${INSTAGRAM_USER_ID}/media`;
   try {
+    const params = {
+      image_url: imageUrl,
+      access_token: IG_ACCESS_TOKEN,
+    };
+
+    // ajouter ce champ seulement si c'est un enfant de carrousel
+    if (isCarouselItem) {
+      params.is_carousel_item = true;
+    }
+
     const response = await axios.post(url, null, {
-      params: {
-        image_url: imageUrl,      // URL Cloudinary publique
-        media_type: 'IMAGE',      // type image
-        is_carousel_item: true,   // indique un élément de carrousel
-        access_token: IG_ACCESS_TOKEN
-      }
+      params,
+      timeout: 20000
     });
+
     console.log('✅ Container média créé, ID :', response.data.id);
     return response.data.id;
   } catch (err) {
-    console.error('❌ Erreur création container média :', err.response?.data || err.message);
-    throw new Error('Échec création media container Instagram');
+  console.error('❌ Erreur création container média :', JSON.stringify(err.response?.data || err.message, null, 2));
+      throw new Error('Échec création media container Instagram');
   }
 }
-
 /**
  * Crée le container CAROUSEL qui regroupe tous les éléments média.
  * @param {string[]} childrenIds - IDs des containers média enfants
  * @param {string} caption - légende du post
  * @returns {Promise<string>} - ID du container carousel
  */
+
+
 async function createCarouselContainer(childrenIds, caption) {
   const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${INSTAGRAM_USER_ID}/media`;
   try {
     const response = await axios.post(url, null, {
       params: {
         children: childrenIds.join(','), // 'id1,id2,...'
+        
         media_type: 'CAROUSEL',          // type carrousel
         caption: caption,                // légende
-        access_token: IG_ACCESS_TOKEN
+        access_token: IG_ACCESS_TOKEN,
       }
     });
     console.log('✅ Container carousel créé, ID :', response.data.id);
@@ -64,8 +76,12 @@ async function publishCarousel(creationId) {
       params: {
         creation_id: creationId,
         access_token: IG_ACCESS_TOKEN
-      }
+      },
+        timeout: 120000  // ⏰ 120 secondes
     });
+
+
+
     console.log('✅ Carousel publié, post_id :', response.data.id);
     return response.data.id;
   } catch (err) {
@@ -81,22 +97,53 @@ async function publishCarousel(creationId) {
  * @returns {Promise<{ post_id: string }>} - ID de la publication
  */
 async function publishCarouselInstagram(imageUrls, caption) {
-  // 1. Créer un container média pour chaque image
-  const childrenIds = [];
-  for (const url of imageUrls) {
-    const id = await createMediaContainer(url);
-    childrenIds.push(id);
-  }
+  try {
+    // ✅ Initialisation de childrenIds
+    let childrenIds = [];
 
+    // 📸 Cas 1 : Une seule image
+    if (imageUrls.length === 1) {
+  const mediaId = await createMediaContainer(imageUrls[0], false); // image simple
+  const postId = await publishCarousel(mediaId); // fonctionne pour image simple
+  return { post_id: postId };
+} 
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+for (const url of imageUrls) {
+  const id = await createMediaContainer(url, true);
+  childrenIds.push(id);
+  console.log("🧩 Children IDs :", childrenIds);
+  await wait(12000); // 1.5 sec entre les requêtes
+}
+    
   // 2. Créer le container carousel
   const carouselId = await createCarouselContainer(childrenIds, caption);
 
   // 3. Publier le carousel sur le feed
   const postId = await publishCarousel(carouselId);
 
-  return { post_id: postId };
+    return { post_id: postId };
+    }  catch (error) {
+  console.error("❌ Erreur Instagram :", JSON.stringify(error.response?.data || error, null, 2));
+  throw new Error("Échec publication carousel Instagram");
+}
 }
 
+
+
+async function getInstagramShortcode(instagramPostId) {
+  const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${instagramPostId}?fields=permalink&access_token=${IG_ACCESS_TOKEN}`;
+  try {
+    const response = await axios.get(url);
+    const permalink = response.data.permalink; // ex: https://www.instagram.com/p/C7P4Ef1Labc/
+    
+    const shortcode = permalink.split("/p/")[1].replace("/", "");
+    return shortcode;
+  } catch (error) {
+    console.error("❌ Erreur récupération shortcode :", error.message);
+    throw new Error("Impossible de récupérer le shortcode Instagram");
+  }
+}
 // 📥 Récupérer la liste des publications Instagram
 const getPublications = async () => {
   const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${INSTAGRAM_USER_ID}/media`;
@@ -123,8 +170,28 @@ const recupererCommentaires = async (instagram_post_id) => {
       params: {
         access_token: IG_ACCESS_TOKEN,
       },
+                  timeout: 60000, // ⏰ 10 secondes (ajoute cette ligne)
     });
-    return response.data.data;
+     
+    const commentaires = response.data.data;
+    console.log('✅ Commentaires récupérés :', commentaires);
+    
+    // 2. Trouver la publication correspondante dans ta DB
+  // 🔍 Trouve la publication correspondante en base de données
+    const publication = await Publication.findOne({
+      where: { id_post_instagram: instagram_post_id }
+    });
+
+    if (!publication) {
+      console.warn("⚠️ Aucune publication trouvée pour cet ID Instagram");
+      return [];
+    }
+
+    // 💾 Sauvegarde les commentaires dans la base de données
+    await sauvegarderCommentaires(publication.id, commentaires);
+    console.log('✅ Commentaires sauvegardés avec succès.');
+
+    return commentaires;
   } catch (error) {
     console.error('Erreur lors de la récupération des commentaires:', error.response?.data || error.message);
     throw new Error('Erreur lors de la récupération des commentaires');
@@ -144,8 +211,24 @@ const supprimerCommentaire = async (commentId) => {
       params: {
         access_token: IG_ACCESS_TOKEN,
       },
+                  timeout: 60000, // ⏰ 60 secondes (ajoute cette ligne)
+
     });
      console.log('✅ Réponse Instagram (suppression réussie) :', response.data);
+
+    // 🔍 Récupérer le commentaire pour obtenir l'ID de la publication associée
+const commentaire = await Commentaire.findOne({
+  where: { id_commentaire_instagram: commentId },
+});
+
+if (!commentaire) {
+  console.warn("⚠️ Aucun commentaire trouvé pour cet ID en base de données.");
+  return response.data;
+}
+
+// Suppression en base de données
+await supprimerCommentaireEnBase(commentId, commentaire.id_publication, 'instagram');
+console.log('✅ Commentaire supprimé en base de données.');
     return response.data;
   } catch (error) {
     console.error('❌ Erreur lors de la suppression du commentaire :');
@@ -157,6 +240,7 @@ const supprimerCommentaire = async (commentId) => {
       throw new Error('Erreur inconnue lors de la suppression');
     }
   }
+
 };
 
 
@@ -186,6 +270,8 @@ const recupererLikes = async (instagram_post_id) => {
       params: {
         access_token: IG_ACCESS_TOKEN,
       },
+                              timeout: 60000, // ⏰ 10 secondes (ajoute cette ligne)
+
     });
 
     const nombreLikes = response.data.like_count || 0;
@@ -196,6 +282,29 @@ const recupererLikes = async (instagram_post_id) => {
     console.error('Erreur lors de la récupération du nombre de likes:', error.response?.data || error.message);
     throw new Error('Erreur lors de la récupération du nombre de likes');
   }
+
+
+};
+
+// 📝 Vérifier l'existence d'une publication Instagram
+const verifierPublicationInstagram = async (instagram_post_id) => {
+  try {
+    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${instagram_post_id}`;
+    const response = await axios.get(url, {
+      params: {
+        access_token: IG_ACCESS_TOKEN,
+        fields: 'id,caption,media_type,media_url,permalink,timestamp'
+      },
+      timeout: 60000  // ⏰ 60 secondes
+    });
+
+    // Si on obtient une réponse avec l'ID, la publication existe
+    console.log('✅ Publication Instagram vérifiée, ID :', response.data.id);
+    return true;
+  } catch (error) {
+    console.error('❌ Erreur vérification publication Instagram :', error.response?.data || error.message);
+    return false;
+  }
 };
 
 module.exports = {
@@ -204,5 +313,7 @@ module.exports = {
   recupererCommentaires,
   supprimerCommentaire,
   masquerCommentaire,
-  recupererLikes
+  recupererLikes,
+  verifierPublicationInstagram,
+  getInstagramShortcode
 };

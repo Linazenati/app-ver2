@@ -10,6 +10,8 @@
     align-items: center;
     font-size: 14px;
     position: fixed;
+     z-index: 1000;
+            /* Assurez-vous que la navbar soit au-dessus de tout autre élément */
 }
 
 .topbar .slogan {
@@ -30,3 +32,4 @@
 .contact-text {
     margin-right: 15px;
 }
+
