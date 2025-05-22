@@ -1,49 +1,54 @@
 // Importation des services nécessaires
-const publicationService = require('../services/publication.service');
-const facebookController = require('./facebook.controller');
-const instagramController = require('./instagram.controller');
-const siteController = require('./voyageorganise.controller')
-const voyageService = require("../services/voyageorganise.service");
+import publicationService from '../services/publication.service.js';
+import facebookController from './facebook.controller.js';
+import instagramController from './instagram.controller.js';
+import siteController from './voyageorganise.controller.js';
+import siteController1 from './omra.controller.js';
+
+
+import voyageService from "../services/voyageorganise.service.js";
+import omraService from '../services/omra.service.js';
+
 
 // Fonction pour publier un voyage sur plusieurs plateformes (site, Facebook, Instagram)
 const publierMulti = async (req, res) => {
   const id = req.params.id;
-  const { plateformes } = req.body; 
+  const { plateformes, type } = req.body;
   const resultats = {};
-console.log("Plateformes reçues :", plateformes);
-
 
   try {
-    // 1. Vérifier que le voyage existe
-    const voyage = await voyageService.getVoyageById(id);
-    if (!voyage) {
-      return res.status(404).json({ message: "Voyage non trouvé" });
+    let item;
+    if (type === "voyage") {
+      item = await voyageService.getVoyageById(id);
+    } else if (type === "omra") {
+      item = await omraService.getOmraById(id);
+    } else {
+      return res.status(400).json({ message: "Type de publication invalide." });
     }
-    
 
+    if (!item) {
+      return res.status(404).json({ message: `${type} non trouvé(e)` });
+    }
 
- // 2. Lancer la publication pour chaque plateforme demandée
-   //site
+    // Lancer les publications
     if (plateformes.includes("site")) {
       try {
-        const siteRes = await siteController.publishToSite(req, res, true); // true = mode silencieux (pas res.json)
+        const siteRes = await siteController1.publishToSite(req, res, true);  // Appel silencieux
         resultats.site = siteRes;
       } catch (err) {
         resultats.site = { error: err.message };
       }
     }
 
-    // Facebook
     if (plateformes.includes("facebook")) {
       try {
-        const fbRes = await facebookController.publierSurFacebook(req, res, true); // true = mode silencieux (pas res.json)
+        const fbRes = await facebookController.publierSurFacebook(req, res, true);
         resultats.facebook = fbRes;
       } catch (err) {
         resultats.facebook = { error: err.message };
       }
     }
 
-    // Instagram
     if (plateformes.includes("instagram")) {
       try {
         const instaRes = await instagramController.publierSurInstagram(req, res, true);
@@ -52,21 +57,17 @@ console.log("Plateformes reçues :", plateformes);
         resultats.instagram = { error: err.message };
       }
     }
-    // Ajoute ici d'autres plateformes si nécessaire...
 
     res.status(200).json({
-      message: 'Publication multiple terminée.',
+      message: `Publication multiple de ${type} terminée.`,
       resultats
     });
 
   } catch (error) {
-    console.error('Erreur publication multiple :', error);
-    res.status(500).json({ message: 'Erreur publication multiple', error: error.message });
+    console.error(`Erreur publication multiple ${type} :`, error);
+    res.status(500).json({ message: `Erreur publication ${type}`, error: error.message });
   }
 };
-
-
-
 
 
 // ✅ Récupérer toutes les publications avec recherche, pagination, tri et filtre par type
@@ -106,8 +107,23 @@ const getById = async (req, res) => {
   }
 };
 
-module.exports = {
+// Récupère une publication par ID
+const getByIdOmra = async (req, res) => {
+  try {
+    const {id_omra} = req.params;
+
+    const pub = await publicationService.getByIdOmra(id_omra);
+    if (!pub) return res.status(404).json({ message: "Publication non trouvée" });
+
+    res.status(200).json(pub);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur de récupération", error: error.message });
+  }
+};
+
+export {
   publierMulti,
   getAll,
-  getById
+  getById,
+  getByIdOmra
 };

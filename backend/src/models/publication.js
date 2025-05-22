@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
 
     // Publication appartient à une Omra
     Publication.belongsTo(models.Omra, {
-      foreignKey: ' id_omra',
+      foreignKey: 'id_omra',
       as: 'omra',  // Alias pour accéder à la relation dans le code
     });
       
@@ -42,8 +42,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('disponible', 'épuisé'),
       defaultValue: 'disponible'
     },
-    id_voyage: DataTypes.INTEGER,
-    id_omra: DataTypes.INTEGER,
+    id_voyage: {
+      type: DataTypes.INTEGER,
+      
+    },
+    id_omra: {
+      type: DataTypes.INTEGER,
+      
+     
+    },
     id_post_facebook: DataTypes.INTEGER,
     id_post_instagram: DataTypes.INTEGER
   }, {

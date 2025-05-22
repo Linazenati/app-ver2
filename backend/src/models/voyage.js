@@ -26,7 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     description: DataTypes.TEXT,
     date_de_depart: DataTypes.DATE,
     date_de_retour: DataTypes.DATE,
-    prix: DataTypes.FLOAT,
+   prix: DataTypes.INTEGER,
+
     statut:  {
       type: DataTypes.ENUM('disponible', 'épuisé'),
       defaultValue: 'disponible'
@@ -42,6 +43,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Voyage',
+    tableName: 'Voyages',
   });
   return Voyage;
 };

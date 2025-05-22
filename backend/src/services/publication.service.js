@@ -8,8 +8,8 @@ const publier = async ({ plateforme, id_voyage = null, id_omra = null, id_post_f
     date_publication: new Date(),
     plateforme,
     statut: 'disponible',
-    id_voyage,
-    id_omra,
+    id_omra: id_omra || null,
+    id_voyage: id_voyage || null,
     id_post_facebook,
     id_post_instagram
   });
@@ -54,14 +54,21 @@ const getAll = async ({
   
 };
 
- 
-
 const getById = async (id) => {
   return await Publication.findByPk(id);
 };
 
+const getByIdOmra = async (idOmra) => {
+  return await Publication.findAll({
+    where:{
+      id_omra:idOmra
+    }
+  })
+}
+
 module.exports = {
   publier,
   getAll,
-  getById
+  getById,
+  getByIdOmra
 };

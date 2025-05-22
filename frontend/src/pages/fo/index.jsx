@@ -21,6 +21,10 @@ import Assurance from"./Assurance"
 import Connexion from "./Connexion"
 import Inscription from "./Inscription"
 import Mon_espace from "./Mon-espace"
+import Reservation from "./Reservation"
+import Conditions from "./Conditions"
+import ChoixPaiement from "./ChoixPaiement";
+
 import "../../assets/fo/css/style.min.css"
 
 
@@ -93,12 +97,17 @@ const Index = () => {
        <Route path="/visaDetudes" element={<Visadetudes />} />
         <Route path="/visaTouristique" element={<VisaTouristique />} />
         <Route path="/omra" element={<Omra />} />
-        <Route path="/Infos_omra1" element={<Infos_omra1 />} />
+        <Route path="/Infos_omra1/:id" element={<Infos_omra1 />} />
         <Route path="/voyagesOrganisés" element={<VoyageOrganisés />} />
         <Route path="/assurance" element={<Assurance />} />
         <Route path="/inscription" element={<Inscription />} />
         <Route path="/Mon_espace" element={<Mon_espace />} />
+        <Route path="/Reservation/:id" element={<Reservation />} />
+        <Route path="/Reservations/:id/choix-paiement" element={<ChoixPaiement />} />
+
         <Route path="/connexion" element={<Connexion />} />
+                <Route path="/Conditions" element={<Conditions />} />
+
       </Routes>
 
       <Footer />

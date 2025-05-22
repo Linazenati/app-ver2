@@ -6,6 +6,7 @@ const publicationController = require('../controllers/publication.controller');
 router.post('/:id/publier-multi', publicationController.publierMulti);
 
 router.get('/', publicationController.getAll);
+router.get('/by_id_omra/:id_omra', publicationController.getByIdOmra);
 router.get('/:id', publicationController.getById);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 // src/services/utilisateur.service.js
 
-const { Utilisateur, Client, Agent, Administrateur } = require('../models');
+const { Utilisateur, Client, Agent, Administrateur,Utilisateur_inscrit } = require('../models');
 const { Op } = require("sequelize"); // Importe les opérateurs Sequelize (comme Op.like pour les filtres avancés)
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
@@ -35,25 +35,7 @@ const createUtilisateur = async (data) => {
 
   // Créer le rôle associé
 
-  if (utilisateur.role === "client") {
-    await Client.create({
-      "id": utilisateur.id,
-      "adresse": "Aucune"
-    });
-  }
-  else if (utilisateur.role === "administrateur") {
-    await Administrateur.create({
-      "id": utilisateur.id,
-    });
-  }
-  else if (utilisateur.role === "agent") {
-    await Agent.create({
-      "id": utilisateur.id,
-      "matricule": "123654",
-      "dateEmbauche": "2024-03-15"
-    });
-  }
-
+  
   return utilisateur;
 };
 

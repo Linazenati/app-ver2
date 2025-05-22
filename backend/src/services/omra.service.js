@@ -37,11 +37,24 @@ const getOmraById = async (id) => {
 };
 
 // ✅ Mettre à jour une Omra
+// Dans omraService.js
 const updateOmra = async (id, data) => {
-  const omra = await Omra.findByPk(id);
-  if (!omra) throw new Error('Omra non trouvée');
-  return await omra.update(data);
+  try {
+    const omra = await Omra.findByPk(id);  // Cherche l'Omra par son ID
+    if (!omra) {
+      throw new Error('Omra non trouvée');
+    }
+
+    // Mets à jour les informations de l'Omra
+    const updatedOmra = await omra.update(data);  // Utilise l'instance pour mettre à jour directement
+    return updatedOmra;  // Retourne l'Omra mise à jour
+  } catch (error) {
+    throw new Error(`Erreur lors de la mise à jour de l'Omra: ${error.message}`);
+  }
 };
+
+
+
 
 // ✅ Supprimer une Omra
 const deleteOmra = async (id) => {
@@ -51,10 +64,30 @@ const deleteOmra = async (id) => {
 };
 
 // ✅ Publier une Omra sur le site (mettre à jour le champ `estPublie`)
-const publishOmra = async (id) => {
+const publishOmra = async (id, plateformes = ['site']) => {
+  // 1. Vérifier que l'Omra existe
   const omra = await Omra.findByPk(id);
   if (!omra) throw new Error('Omra non trouvée');
-  return await omra.update({ estPublie: true });
+
+  // 2. Créer les entrées dans Publications
+  const publications = await Promise.all(
+    plateformes.map(plateforme => 
+      Publication.create({
+        plateforme,
+        id_omra: id,
+        date_publication: new Date(),
+        statut: 'actif'
+      })
+    )
+  );
+
+  // 3. Mettre à jour le statut
+  await omra.update({ estPublie: true });
+
+  return {
+    omra,
+    publications
+  };
 };
 
 module.exports = {

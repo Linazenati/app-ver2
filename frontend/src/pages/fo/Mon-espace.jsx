@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import axios from 'axios';
 import {
   Box,
   Typography,
@@ -13,25 +12,25 @@ import {
   Switch,
   Avatar,
   Collapse,
-  IconButton
+  IconButton,
+  CircularProgress
 } from '@mui/material';
 import {
   Email,
   Lock,
-  Security,
   Notifications,
   Facebook,
-  Delete,
   Edit,
   AddPhotoAlternate,
-  Language,
   Search,
-  Save
+  Save,
+  PictureAsPdf
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { useUser } from "../../contexts/UserContext";
 import authService from "../../services-call/auth";
 import serviceCall from '../../services-call/utilisateur';
+import factureService from '../../services-call/facture';
 
 const SettingsPanel = () => {
   const personalInfoRef = useRef(null);
@@ -39,33 +38,101 @@ const SettingsPanel = () => {
   const [editField, setEditField] = useState(null);
   const [tempValue, setTempValue] = useState('');
   const [userInfo, setUserInfo] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  
+  const [factures, setFactures] = useState([]);
+  const [loadingFactures, setLoadingFactures] = useState(false);
+  const [errorFactures, setErrorFactures] = useState(null);
 
   const { user } = useUser();
   const token = user?.token;
 
-  // Chargement des données utilisateur avec le token du contexte
+  // Chargement des données utilisateur
   useEffect(() => {
     const session = JSON.parse(localStorage.getItem("session"));
-  const token = session?.token;  // Récupère le token de l'objet session
-  console.log("Token récupéré depuis la session :", token);  // Log pour vérifier
-    if (!token) {
+    const tokenFromStorage = session?.token;
+    
+    if (!tokenFromStorage) {
       console.error("Aucun token trouvé !");
+      setLoadingUser(false);
       return;
     }
 
+    setLoadingUser(true);
+    
     authService.getCurrentUser({
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${tokenFromStorage}` },
     })
       .then((response) => {
-        setUserInfo(response.data);
+        if (response.data) {
+          const userData = response.data;
+          const completeUserData = {
+            ...userData,
+            nom: userData.nom || 'Non spécifié',
+            prenom: userData.prenom || 'Non spécifié',
+            email: userData.email || 'Non spécifié',
+            telephone: userData.telephone || 'Non spécifié'
+          };
+          setUserInfo(completeUserData);
+        }
       })
       .catch((error) => {
-        console.error("Erreur lors du chargement de l’utilisateur :", error);
+        console.error("Erreur lors du chargement de l'utilisateur :", error);
+      })
+      .finally(() => {
+        setLoadingUser(false);
       });
   }, []);
 
+  // Chargement des factures
+  useEffect(() => {
+    if (!token) return;
+
+    setLoadingFactures(true);
+    setErrorFactures(null);
+    console.log("[SettingsPanel] Chargement des factures...");
+
+    factureService.getMesFactures(token)
+      .then(formattedFactures => {
+        console.log("[SettingsPanel] Factures formatées reçues:", formattedFactures);
+        setFactures(formattedFactures);
+      })
+      .catch(err => {
+        console.error("[SettingsPanel] Erreur:", err);
+        setErrorFactures(err.message || "Erreur lors du chargement des factures");
+        setFactures([]);
+      })
+      .finally(() => {
+        setLoadingFactures(false);
+      });
+  }, [token]);
+
+  // Télécharger une facture
+  const handleDownloadFacture = async (filename, displayName) => {
+    if (!token || !userInfo) return;
+
+    try {
+      const factureData = {
+        ...factures.find(f => f.filename === filename),
+        nom: userInfo.nom,
+        prenom: userInfo.prenom,
+        email: userInfo.email,
+        telephone: userInfo.telephone
+      };
+
+      const response = await factureService.downloadFacture(filename, token, factureData);
+      const url = window.URL.createObjectURL(new Blob([response]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', displayName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Erreur téléchargement:", err);
+      setErrorFactures(err.message || "Impossible de télécharger la facture");
+    }
+  };
 
   const toggleEditForm = () => {
     setShowEditForm(prev => !prev);
@@ -82,31 +149,96 @@ const SettingsPanel = () => {
 
   const saveEdit = () => {
     if (!editField) return;
-  
     const updatedField = { [editField]: tempValue };
-  
+
     serviceCall.updateItem(userInfo.id, updatedField)
       .then(() => {
         setUserInfo(prev => ({ ...prev, ...updatedField }));
         setEditField(null);
       })
       .catch(error => {
-        console.error('Erreur lors de la mise à jour :', error);
+        console.error('Erreur mise à jour:', error);
       });
   };
-  
 
   const infos = [
-    { label: 'Nom', field: 'nom', icon: <Edit /> },
-    { label: 'Prenom', field: 'prenom', icon: <Edit /> },
-    { label: 'N° Téléphone', field: 'telephone', icon: <Edit /> },
-    { label: 'Email', field: 'email', icon: <Email /> },
-    { label: 'Mot de passe', field: 'motDePasse', icon: <Lock /> },
-    
+    { label: 'Nom', field: 'nom', icon: <Edit />, editable: true },
+    { label: 'Prénom', field: 'prenom', icon: <Edit />, editable: true },
+    { label: 'N° Téléphone', field: 'telephone', icon: <Edit />, editable: true },
+    { label: 'Email', field: 'email', icon: <Email />, editable: false },
+    { label: 'Mot de passe', field: 'motDePasse', icon: <Lock />, editable: true, type: 'password' },
   ];
 
+  const renderFactures = () => {
+    if (loadingFactures) {
+      return (
+        <Box display="flex" justifyContent="center">
+          <CircularProgress />
+        </Box>
+      );
+    }
+
+    if (errorFactures) {
+      return (
+        <Typography color="error" sx={{ mb: 2 }}>
+          {errorFactures}
+        </Typography>
+      );
+    }
+
+    if (factures.length === 0) {
+      return <Typography>Aucune facture disponible</Typography>;
+    }
+
+    return (
+      <List disablePadding>
+        {factures.map((facture) => {
+          const factureDate = new Date(facture.date);
+          const formattedDate = isNaN(factureDate.getTime())
+            ? 'Date inconnue'
+            : factureDate.toLocaleDateString('fr-FR');
+
+          return (
+            <ListItem key={facture.id} sx={{ pl: 0 }}>
+              <ListItemIcon sx={{ color: 'primary.main' }}>
+                <PictureAsPdf />
+              </ListItemIcon>
+              <ListItemText
+                primary={`Facture #${facture.numero || '0001'}`}
+                secondary={`Émise le: ${formattedDate}`}
+              />
+              <Button
+                variant="outlined"
+                onClick={() => handleDownloadFacture(
+                  facture.filename, 
+                  `Facture_${facture.numero || '0001'}.pdf`
+                )}
+              >
+                Télécharger
+              </Button>
+            </ListItem>
+          );
+        })}
+      </List>
+    );
+  };
+
+  if (loadingUser) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   if (!userInfo) {
-    return <Typography align="center">Chargement...</Typography>;
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <Typography color="error">
+          Impossible de charger les informations utilisateur
+        </Typography>
+      </Box>
+    );
   }
 
   return (
@@ -154,47 +286,47 @@ const SettingsPanel = () => {
         />
         <Collapse in={showEditForm} timeout="auto" unmountOnExit>
           <Box sx={{ mt: 2, mb: 2, pl: 6 }}>
-            {infos.map(({ label, field, icon }) => (
+            {infos.map(({ label, field, icon, editable, type }) => (
               <ListItem key={field} sx={{ pl: 0 }}>
                 <ListItemIcon sx={{ color: 'primary.main' }}>{icon}</ListItemIcon>
                 <ListItemText
                   primary={label}
                   secondary={
-                    editField === field ? (
+                    editField === field && editable ? (
                       <TextField
                         fullWidth
-                        type={field === 'motDePasse' ? 'password' : 'text'}
+                        type={type || 'text'}
                         value={tempValue}
                         onChange={(e) => setTempValue(e.target.value)}
                         size="small"
                       />
                     ) : (
-                      userInfo[field]
+                      userInfo[field] || 'Non spécifié'
                     )
                   }
                 />
                 <Box>
-                  {editField === field ? (
+                  {editField === field && editable ? (
                     <IconButton color="primary" onClick={saveEdit}>
                       <Save />
                     </IconButton>
-                  ) : (
+                  ) : editable ? (
                     <IconButton onClick={() => startEdit(field)}>
                       <Edit />
                     </IconButton>
-                  )}
+                  ) : null}
                 </Box>
               </ListItem>
             ))}
           </Box>
         </Collapse>
-        
-        
       </Section>
 
       <Divider sx={{ my: 3 }} />
 
-      
+      <Section title="Mes factures">
+        {renderFactures()}
+      </Section>
 
       <Divider sx={{ my: 3 }} />
 
@@ -219,9 +351,9 @@ const SettingsPanel = () => {
   );
 };
 
-const Section = ({ title, children, refProp }) => (
+const Section = React.forwardRef(({ title, children }, ref) => (
   <motion.div
-    ref={refProp}
+    ref={ref}
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     transition={{ duration: 0.3 }}
@@ -237,27 +369,15 @@ const Section = ({ title, children, refProp }) => (
       {children}
     </List>
   </motion.div>
-);
+));
 
 const SettingItem = ({ icon, text, action }) => (
-  <ListItem sx={{
-    py: 2,
-    px: 0,
-    '&:not(:last-child)': {
-      borderBottom: '1px solid',
-      borderColor: 'divider'
-    }
-  }}>
-    <ListItemIcon sx={{ minWidth: 40, color: 'primary.main' }}>
-      {icon}
-    </ListItemIcon>
-    <ListItemText
-      primary={text}
-      primaryTypographyProps={{ variant: 'body1' }}
-    />
-    <Box>
-      {action}
+  <ListItem sx={{ pl: 0, justifyContent: 'space-between' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <ListItemIcon sx={{ color: 'primary.main' }}>{icon}</ListItemIcon>
+      <ListItemText primary={text} />
     </Box>
+    {action}
   </ListItem>
 );
 
