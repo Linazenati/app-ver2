@@ -8,6 +8,6 @@ serviceCall.logout = () => api.post("/auth/logout");
 
 serviceCall.register = (data) => api.post("/auth/register",data);
 
-serviceCall.getCurrentUser = (userId) => api.get("/auth/me", userId);
+serviceCall.getCurrentUser = () => api.get("/auth/me");
 
 export default serviceCall;

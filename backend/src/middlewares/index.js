@@ -7,7 +7,8 @@ module.exports = (app) => {
 
     // Configuration CORS avec des options spécifiques
     const corsOptions = {
-        origin: 'http://localhost:5173', // Remplace par l'origine de ton frontend
+        origin: ['http://localhost:5173',, 
+            /\.ngrok-free\.app$/ ],// Remplace par l'origine de ton frontend
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization'],
         credentials: true,

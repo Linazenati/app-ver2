@@ -20,15 +20,18 @@ import VoyageOrganisés from "./VoyagesOrganisés"
 import Assurance from"./Assurance"
 import Connexion from "./Connexion"
 import Inscription from "./Inscription"
+<<<<<<< HEAD
 import Mon_espace from "./Mon-espace"
 import Reservation from "./Reservation"
 import Conditions from "./Conditions"
 import ChoixPaiement from "./ChoixPaiement";
 
+=======
+>>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
 import "../../assets/fo/css/style.min.css"
-
-
-
+import Voyage from "./list-voyages"
+import Infos_Voyage from "./infos_voyage"
+import Contact from "./contact"
 const Index = () => {
   useEffect(() => {
     const scripts = [
@@ -101,6 +104,7 @@ const Index = () => {
         <Route path="/voyagesOrganisés" element={<VoyageOrganisés />} />
         <Route path="/assurance" element={<Assurance />} />
         <Route path="/inscription" element={<Inscription />} />
+<<<<<<< HEAD
         <Route path="/Mon_espace" element={<Mon_espace />} />
         <Route path="/Reservation/:id" element={<Reservation />} />
         <Route path="/Reservations/:id/choix-paiement" element={<ChoixPaiement />} />
@@ -108,6 +112,12 @@ const Index = () => {
         <Route path="/connexion" element={<Connexion />} />
                 <Route path="/Conditions" element={<Conditions />} />
 
+=======
+        <Route path="/connexion" element={<Connexion />} />
+        <Route path="/voyage" element={<Voyage />} />
+        <Route path="/infos_voyage/:id"  element={<Infos_Voyage/>}/>
+         <Route path="/contact" element={<Contact />} />
+>>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
       </Routes>
 
       <Footer />

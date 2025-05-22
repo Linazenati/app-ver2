@@ -33,15 +33,7 @@ function Sidebar() {
         { to: "/admin/Liste_omra", label: "Liste des Omra", icon: "fas fa-list-alt" },
       ],
     },
-    {
-      title: "Publier ",
-      icon: "fas fa-globe",
-      links: [
-        { to: "/admin/publication-voyage", label: "Publier un voyage organisé", icon: "fas fa-paper-plane" },
-        { to: "/admin/publication-omra", label: "Publier Omra", icon: "fas fa-share-square" },
-        { to: "/admin/liste-publication", label: "Liste des publications", icon: "fas fa-newspaper" },
-      ],
-    },
+    
   {
   title: "Réseaux Sociaux",
   icon: "fas fa-share-alt",

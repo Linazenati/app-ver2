@@ -16,10 +16,17 @@ router.get("/:id", voyageController.getById);
 router.put("/:id", voyageController.update);
 
 // 🗑️ Supprimer un voyage par ID (appelée "deletee")
-router.delete("/:id", voyageController.deletee);
+router.delete("/:id", voyageController.remove);
 
 // ✏️ publier un voyage dans le site par ID
-router.post("/:id/publish", voyageController.publishToSite);
+router.post("/:id/publish", voyageController.publierSurSiteSeule);
+
+// 🔍 Récupérer les voyages publier sur site
+router.get('/publies/site', voyageController.getVoyagesPubliesSurSite);
+
+
+// 🔍 Récupérer les voyages publier sur site avec commentaire des rsx
+router.get('/publies/siteCommentaire/:id', voyageController.getDetailsVoyages);
 
 
 module.exports = router;

@@ -12,8 +12,9 @@
     box-shadow: 0 5px 15px var(--ombre);
     padding: 10px 20px;
     border-bottom: 4px solid var(--bleu-fonce);
-    z-index: 10;
     padding-left: 10px;
+    z-index: 1000;
+        /* S'assurer qu'elle est toujours au-dessus */
 }
 
 

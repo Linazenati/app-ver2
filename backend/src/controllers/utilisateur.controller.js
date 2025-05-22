@@ -11,10 +11,8 @@ const create = async (req, res) => {
     const data = {
       ...req.body,
       ...req.query, // au cas où l'appel vient d'un formulaire GET
-      
       role: 'agent'
     };
-
     console.log("Requête reçue pour création d'agent :", data); // Affiche les données envoyées
 
     const { email } = data;
@@ -24,8 +22,7 @@ const create = async (req, res) => {
     if (emailExistant) {
       return res.status(400).json({ message: "Un utilisateur avec cet email existe déjà." });
     }
-    console.log("Données envoyées pour createUtilisateur :", data);
-
+    
     const utilisateur = await utilisateurService.createUtilisateur(data);
     res.status(201).json(utilisateur);
   } catch (error) {
@@ -74,30 +71,37 @@ const getOne = async (req, res) => {
 // ✅ Mettre à jour un utilisateur
 const update = async (req, res) => {
   try {
-    const utilisateur = await utilisateurService.updateUtilisateur(req.params.id, req.body);
-    if (!utilisateur) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
-    }
-    res.status(200).json(utilisateur);
+    const result = await utilisateurService.updateUtilisateur(req.params.id, req.body);
+    
+    
+
+    // Message côté frontend
+    res.status(200).json({ 
+      message: `Utilisateur ${req.params.id} mis à jour avec succès`,
+      utilisateur: result.utilisateur,
+    });
   } catch (error) {
+    console.error("Erreur lors de la mise à jour :", error.message);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 // ✅ Supprimer un utilisateur
 const deleteUtilisateur = async (req, res) => {
   try {
     const result = await utilisateurService.deleteUtilisateur(req.params.id);
-    if (!result) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
-    }
-    res.status(200).json({ message: 'Utilisateur supprimé avec succès' });
+    
+    // Message côté frontend
+    res.status(200).json({ 
+      message: result.message,
+    });
   } catch (error) {
+    console.error("Erreur lors de la suppression :", error.message);
     res.status(500).json({ message: error.message });
   }
 };
-
 
 
 // 🔄 Export des contrôleurs

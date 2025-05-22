@@ -1,5 +1,5 @@
 const utilisateurService = require("../services/utilisateur.service")
-const { getCurrentUser } = require('../services/utilisateur.service');
+
 module.exports.login = async (req, res) => {
   try {
     const response = await utilisateurService.login(req.body);
@@ -24,31 +24,21 @@ module.exports.logout = async (req, res) => {
 
 module.exports.register = async (req, res) => {
   try {
-    console.log("📦 BODY reçu :", req.body); // 👉 Déplacé ici
-
-    const response = await utilisateurService.register(req.body);
+    const response = await utilisateurService.register( req.body );
 
     res.status(201).json({ success: true, data: response });
+    console.log("BODY reçu :", req.body);
 
   } catch (error) {
-    console.error("❌ Erreur dans register :", error.message); // Ajoute aussi cette ligne pour plus de clarté
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success:false, message: error.message });
   }
 };
 
-
 module.exports.currentUser = async (req, res) => {
   try {
-    console.log("📥 Requête reçue pour /me");
-    console.log("👤 Données utilisateur extraites du token:", req.user);
-
-    const userId = req.user.id;
-    const utilisateur = await getCurrentUser(userId);
-
-    console.log("📤 Utilisateur trouvé:", utilisateur);
-    res.status(200).json(utilisateur);
+    
+    res.status(201).json("OK - CurrentUser");
   } catch (error) {
-    console.log("❌ Erreur dans currentUser:", error.message);
     res.status(500).json({ message: error.message });
   }
 };

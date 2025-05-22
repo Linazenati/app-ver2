@@ -9848,9 +9848,68 @@ input:focus {
   /* Texte bleu */
 }
 
-.custom-search-bar:focus {
-  border-color: #0056b3;
-  /* Bleu plus foncé au focus */
-  box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
-  /* Ombre bleue au focus */
+* style.css */ .contact-hero {
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-title {
+  color: #fff;
+  font-size: 2.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hero-subtitle {
+  color: #f8f9fa;
+  font-size: 1.2rem;
+}
+
+.contact-info,
+.contact-form {
+  background: #fff;
+  border: 1px solid #eee;
+}
+
+.social-links a {
+  transition: transform 0.3s;
+}
+
+.social-links a:hover {
+  transform: translateY(-3px);
+}
+
+.form-control,
+.form-select {
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: #2A5C82;
+  transition: all 0.3s;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .contact-info,
+  .contact-form {
+    margin-bottom: 2rem;
+  }
 }

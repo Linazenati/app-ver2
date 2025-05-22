@@ -31,6 +31,25 @@ function Navbar() {
               <Link to="/web/Home" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
                 <i className="fas fa-home mr-2"></i> Accueil
               </Link>
+
+              {/* Lien vers Offres avec un sous-menu */}
+              <div className="nav-item dropdown">
+                <Link
+                  className="nav-link dropdown-toggle d-flex align-items-center"
+                  to="#"
+                  id="offresDropdown"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                  style={{ fontWeight: "bold" }}
+                >
+                  <i className="fas fa-gift mr-2"></i> Offres
+                </Link>
+                <ul className="dropdown-menu" aria-labelledby="offresDropdown">
+                  <li><Link to="/web/Omra" className="dropdown-item">Omra</Link></li>
+                  <li><Link to="/web/Voyage" className="dropdown-item">Voyages Organisés</Link></li>
+                </ul>
+              </div>
+              
               <Link to="/web/Hotels" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
                 <i className="fas fa-hotel mr-2"></i> Hotels
               </Link>
@@ -56,23 +75,7 @@ function Navbar() {
                 </ul>
               </div>
 
-              {/* Lien vers Offres avec un sous-menu */}
-              <div className="nav-item dropdown">
-                <Link
-                  className="nav-link dropdown-toggle d-flex align-items-center"
-                  to="#"
-                  id="offresDropdown"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                  style={{ fontWeight: "bold" }}
-                >
-                  <i className="fas fa-gift mr-2"></i> Offres
-                </Link>
-                <ul className="dropdown-menu" aria-labelledby="offresDropdown">
-                  <li><Link to="/web/Omra" className="dropdown-item">Omra</Link></li>
-                  <li><Link to="/web/VoyagesOrganisés" className="dropdown-item">Voyages Organisés</Link></li>
-                </ul>
-              </div>
+              
 
               <Link to="/web/Assurance" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
                 <i className="fas fa-shield-alt mr-2"></i> Assurance

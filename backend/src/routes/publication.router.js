@@ -9,4 +9,7 @@ router.get('/', publicationController.getAll);
 router.get('/by_id_omra/:id_omra', publicationController.getByIdOmra);
 router.get('/:id', publicationController.getById);
 
+// ✅ Récupérer les publications d'un voyage publié par ID
+router.get('/voyages/:id/publications', publicationController.getPublicationsByVoyageId);
+
 module.exports = router;

@@ -5,6 +5,8 @@ const fs = require('fs');
 const FormData = require('form-data');
 const path = require('path');
 const { PAGE_ACCESS_TOKEN, PAGE_ID, GRAPH_API_VERSION } = require('../config/facebook.config');
+const { sauvegarderCommentaires , supprimerCommentaireEnBase } = require('./commentaire.service');
+const { Publication , Commentaire } = require('../models');
 
 const publishToFacebook = async (voyage, message, localImagePaths) => {
   try {
@@ -20,7 +22,7 @@ const publishToFacebook = async (voyage, message, localImagePaths) => {
       const response = await axios.post(
         `https://graph.facebook.com/${GRAPH_API_VERSION}/${PAGE_ID}/photos`,
         form,
-        { headers: form.getHeaders() }
+        { headers: form.getHeaders() , timeout: 300000 }
       );
 
       // ✅ On récupère l'id de l'image pour l'associer plus tard à la publication principale
@@ -37,14 +39,19 @@ const publishToFacebook = async (voyage, message, localImagePaths) => {
         message: message,
         attached_media: mediaFbIds // On attache toutes les images ici
       }
+
     );
+
 
     // ✅ La publication a été créée avec succès
     return { post_id: postResponse.data.id };
-  } catch (error) {
-    console.error("❌ Erreur lors de la publication sur Facebook :", error.response?.data || error.message);
-    throw new Error("Publication Facebook échouée");
+ } catch (error) {
+  console.error("❌ Erreur lors de la publication sur Facebook :", error.response?.data || error.message);
+  if (error.code === 'ETIMEDOUT') {
+    console.error("⚠️ La connexion au serveur Facebook a expiré. Vérifiez votre connexion Internet.");
   }
+  throw new Error("Publication Facebook échouée");
+}
 };
 
 //recupérer la liste des publications
@@ -61,29 +68,49 @@ const getPublications = async () => {
 };
 
 // 📝 Récupérer les commentaires d'une publication
-const recupererCommentaires = async (facebook_post_id) => {
+const recupererCommentaires = async (id_post_facebook) => {
   try {
-    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${facebook_post_id}/comments`;
+    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${id_post_facebook}/comments`;
     const response = await axios.get(url, {
       params: {
         access_token: PAGE_ACCESS_TOKEN,
       },
+                  timeout: 200000, // ⏰ 10 secondes (ajoute cette ligne)
+
     });
-    return response.data.data;
+  const commentaires = response.data.data;
+    console.log('✅ Commentaires récupérés :', commentaires);
+
+    const publication = await Publication.findOne({
+      where: { id_post_facebook: id_post_facebook},
+    });
+
+    if (!publication) {
+      console.warn("⚠️ Aucune publication trouvée pour cet ID Facebook");
+      return [];
+    }
+
+    await sauvegarderCommentaires(publication.id, commentaires, 'facebook');
+    console.log('✅ Commentaires sauvegardés avec succès.');
+
+    return commentaires;
   } catch (error) {
-    console.error('Erreur lors de la récupération des commentaires:', error.response?.data || error.message);
-    throw new Error('Erreur lors de la récupération des commentaires');
+    console.error('Erreur lors de la récupération des commentaires Facebook:', error.response?.data || error.message);
+    throw new Error('Erreur lors de la récupération des commentaires Facebook');
   }
+
 };
 
 // 📝 Récupérer les Likes d'une publication
-const recupererLikes = async (facebook_post_id) => {
+const recupererLikes = async (id_post_facebook) => {
  try {
-    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${facebook_post_id}?fields=reactions.summary(true)`;
+    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${id_post_facebook}?fields=reactions.summary(true)`;
     const response = await axios.get(url, {
       params: {
         access_token: PAGE_ACCESS_TOKEN,
       },
+                        timeout: 200000, // ⏰ 10 secondes (ajoute cette ligne)
+
     });
 
     const nombreLikes = response.data.reactions?.summary?.total_count || 0;
@@ -109,8 +136,23 @@ const supprimerCommentaire = async (commentId) => {
       params: {
         access_token: PAGE_ACCESS_TOKEN,
       },
+                  timeout: 20000, // ⏰ 10 secondes (ajoute cette ligne)
+
     });
      console.log('✅ Réponse Facebook (suppression réussie) :', response.data);
+// 🔍 Récupérer le commentaire pour obtenir l'ID de la publication associée
+const commentaire = await Commentaire.findOne({
+  where: { id_commentaire_facebook: commentId },
+});
+
+if (!commentaire) {
+  console.warn("⚠️ Aucun commentaire trouvé pour cet ID en base de données.");
+  return response.data;
+}
+
+// Suppression en base de données
+await supprimerCommentaireEnBase(commentId, commentaire.id_publication, 'facebook');
+console.log('✅ Commentaire supprimé en base de données.');
     return response.data;
   } catch (error) {
     console.error('❌ Erreur lors de la suppression du commentaire :');
@@ -133,12 +175,29 @@ const masquerCommentaire = async (commentId) => {
         access_token: PAGE_ACCESS_TOKEN,
         is_hidden: true,
       },
+                        timeout: 90000, // ⏰ 10 secondes (ajoute cette ligne)
+
     });
      console.log('✅ Réponse Facebook (masquage réussie) :', response.data);
     return response.data;
   } catch (error) {
     console.error('Erreur lors du masquage du commentaire:', error.response?.data || error.message);
     throw new Error('Erreur lors du masquage du commentaire');
+  }
+};
+
+
+// ✅ Vérifier si une publication existe sur Facebook
+const verifierPublicationFacebook = async (postId) => {
+  try {
+    const response = await axios.get(`https://graph.facebook.com/${GRAPH_API_VERSION}/${postId}`, {
+      params: { access_token: PAGE_ACCESS_TOKEN },
+      timeout: 30000,
+    });
+    return response.data && response.data.id === postId;
+  } catch (error) {
+    console.warn('⚠️ Publication non trouvée sur Facebook :', error.response?.data || error.message);
+    return false;
   }
 };
 module.exports = {
@@ -148,4 +207,5 @@ module.exports = {
   recupererCommentaires,
   supprimerCommentaire,
   masquerCommentaire,
+  verifierPublicationFacebook
 };

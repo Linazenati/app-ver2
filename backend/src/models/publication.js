@@ -42,6 +42,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('disponible', 'épuisé'),
       defaultValue: 'disponible'
     },
+<<<<<<< HEAD
     id_voyage: {
       type: DataTypes.INTEGER,
       
@@ -53,6 +54,25 @@ module.exports = (sequelize, DataTypes) => {
     },
     id_post_facebook: DataTypes.INTEGER,
     id_post_instagram: DataTypes.INTEGER
+=======
+    id_voyage: DataTypes.INTEGER,
+    id_omra: DataTypes.INTEGER,
+    id_post_facebook: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
+    id_post_instagram: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    },   
+
+    // Exemple avec Sequelize
+url_post: {
+  type: DataTypes.STRING,
+  allowNull: true,
+    }
+
+>>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
   }, {
     sequelize,
     modelName: 'Publication',

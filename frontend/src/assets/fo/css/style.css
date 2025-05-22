@@ -9762,9 +9762,39 @@ h6,
   border-color: transparent #5f8f25 #5f8f25 transparent;
   z-index: -1;
 }
-
-.contact-form .help-block ul {
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
+/* CSS amélioré */
+.contact-hero {
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  position: relative;
 }
+
+.hero-title {
+  font-family: 'Arial', sans-serif;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.hero-subtitle {
+  font-family: 'Georgia', serif;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.2rem;
+    padding: 0 20px;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem;
+    padding: 0 20px;
+  }
+
+  .contact-hero {
+    min-height: 50vh;
+  }

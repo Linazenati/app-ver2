@@ -8,6 +8,7 @@ const authRouter = require("./auth.router");
 const instagramRouter = require("./instagram.router");
 const publicationRouter = require("./publication.router");
 const omraRouter = require("./omra.router");
+<<<<<<< HEAD
 const reservationRouter = require("./reservation.router"); 
 const webhookRouter = require("./webhook.router");
 const paiementRouter = require("./paiement.router"); 
@@ -17,6 +18,18 @@ const checkToken = require("./../middlewares/authMiddleware")
 
 module.exports = (app) => {
   app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+=======
+const commentaireRouter = require("./commentaire.router");
+
+const hotelRouter = require("./hotel.router");
+
+module.exports = (app) => {
+
+  app.use('/images', express.static(path.join(__dirname,  '..', 'public', 'images')));
+
+      // 🔐 Auth (login/register)
+    app.use("/api/v1/auth", authRouter);
+>>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
 
   // 🔐 Auth (login/register)
   app.use("/api/v1/auth", authRouter);
@@ -61,6 +74,7 @@ app.use("/api/v1/paiements", paiementRouter);
 
 
 
+<<<<<<< HEAD
 
   // 📍 Catch all pour les routes non définies dans /api/v1
   app.use("/api/v1/", (req, res) => {
@@ -72,3 +86,25 @@ app.use("/api/v1/paiements", paiementRouter);
     res.json({ msg: "Hi" });
   });
 };
+=======
+  
+    // Routes pour les commentaires
+    app.use("/api/v1/commentaires", commentaireRouter);
+  
+    // Routes pour les hotels
+    app.use("/api/v1/hotel", hotelRouter);
+
+  
+      // 📍 Catch all pour les routes non définies dans /api/v1
+    app.use("/api/v1/", (req, res) => {
+        res.json({ Error: true, msg: "Linaa Bonjour" })
+    });
+
+    
+  // 🌍 Catch all général (hors /api/v1) – utile pour SPA ou test
+    app.use("/app/*", (req, res) => {
+        res.json({ msg:"Hi" })
+    });
+}
+    
+>>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc

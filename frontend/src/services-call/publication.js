@@ -20,4 +20,8 @@ publicationService.getById = async (id) =>
 publicationService.getByIdOmra = async (idOmra) =>
   await api.get(`${API_POINT}/by_id_omra/${idOmra}`);
 
+  // 📥 Récupérer les publications d'un voyage publié (par ID)
+publicationService.getPublicationsByVoyageId = (id) =>
+  api.get(`${API_POINT}/voyages/${id}/publications`);
+  
 export default publicationService;

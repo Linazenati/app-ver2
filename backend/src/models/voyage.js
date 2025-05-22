@@ -14,9 +14,9 @@ module.exports = (sequelize, DataTypes) => {
     foreignKey: 'id_agent',
     as: 'agent'
        });
-       Voyage.hasMany(models.Voyage, {
+       Voyage.hasMany(models.Publication, {
     foreignKey: 'id_voyage',
-    as: 'voyage'
+    as: 'publications'
        });
       
     }
@@ -24,10 +24,16 @@ module.exports = (sequelize, DataTypes) => {
   Voyage.init({
     titre: DataTypes.STRING,
     description: DataTypes.TEXT,
+<<<<<<< HEAD
     date_de_depart: DataTypes.DATE,
     date_de_retour: DataTypes.DATE,
    prix: DataTypes.INTEGER,
 
+=======
+    date_de_depart: DataTypes.DATEONLY,
+    date_de_retour: DataTypes.DATEONLY,
+    prix: DataTypes.FLOAT,
+>>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
     statut:  {
       type: DataTypes.ENUM('disponible', 'épuisé'),
       defaultValue: 'disponible'
@@ -39,8 +45,21 @@ module.exports = (sequelize, DataTypes) => {
     },
    
     image: DataTypes.STRING,
-    id_agent: DataTypes.INTEGER
-  }, {
+    id_agent: DataTypes.INTEGER,
+    programme: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+    excursions: {
+      type: DataTypes.JSON,
+      defaultValue: []
+    },
+   
+  },
+  
+  
+    
+    {
     sequelize,
     modelName: 'Voyage',
     tableName: 'Voyages',

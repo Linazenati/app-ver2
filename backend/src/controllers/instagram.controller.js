@@ -1,7 +1,8 @@
 // controllers/instagram.controller.js
+const fs = require('fs');
 
 const path = require('path');
-const { publishCarouselInstagram ,getPublications,recupererCommentaires,supprimerCommentaire,masquerCommentaire,recupererLikes} = require('../services/instagram.service');
+const { publishCarouselInstagram ,getPublications,recupererCommentaires,supprimerCommentaire,masquerCommentaire,recupererLikes,verifierPublicationInstagram,getInstagramShortcode} = require('../services/instagram.service');
 const uploadToCloudinary = require('../middlewares/cloudinaryUpload');
 const { Voyage} = require('../models');
 const publicationService = require('../services/publication.service');
@@ -10,17 +11,20 @@ const voyageService = require("../services/voyageorganise.service");
 /**
  * Contrôleur pour publier un voyage sur Instagram en carrousel.
  */
-const publierSurInstagram = async (req, res,silent = false) => {
+const publierSurInstagram = async (id) => {
   try {
-    const { id } = req.params;
     // 1️⃣ Récupération du voyage
     const voyage = await Voyage.findByPk(id);
-    if (!voyage) return res.status(404).json({ message: 'Voyage introuvable' });
-
-    // 2️⃣ Empêcher la double publication
-    if (voyage.instagram_post_id) {
-      return res.status(400).json({ message: 'Déjà publié sur Instagram.' });
+   if (!voyage) {
+      console.error('Voyage non trouvé');
+  throw new Error("Voyage introuvable");
     }
+
+    // 2. Vérifier si publication Facebook existe déjà
+    const publicationExistante = await publicationService.getByPlatformAndVoyage('instagram', id);
+    if (publicationExistante) {
+     throw new Error({ message: 'Ce voyage a déjà été publié sur instagram.' });
+    } 
 
     // 3️⃣ Parser et vérifier les images
     let images;
@@ -33,16 +37,25 @@ const publierSurInstagram = async (req, res,silent = false) => {
 
     // 4️⃣ Préparer la légende
     const caption =
-      `🌍 ${voyage.titre}\n` +
-      `📍 ${voyage.destination}\n` +
-      `💰 ${voyage.prix} €\n` +
-      `📅 ${voyage.date_de_depart}\n` +
-      `📝 ${voyage.description}`;
+  `🌍 Nouveau voyage : ${voyage.titre}\n` +
+  `📍 Description : ${voyage.description}\n` +
+  `💰 Prix : ${voyage.prix} €\n` +
+  `📅 Date de départ : ${voyage.date_de_depart}\n` +
+  `📅 Date de retour : ${voyage.date_de_retour}\n` +
+  `🔗 Réservez votre place ici : https://1ed6-154-248-34-163.ngrok-free.app/web/infos_voyage/${voyage.id}`;
 
     // 5️⃣ Upload local -> Cloudinary
     const imageUrls = [];
     for (const file of images) {
       const localPath = path.join(__dirname, '..', 'public', 'images', file);
+      console.log("🖼️ Tentative d'upload pour :", localPath);
+
+  // Vérifiez si le fichier existe
+  if (!fs.existsSync(localPath)) {
+    console.error("❌ Fichier introuvable :", localPath);
+    return { message: `Fichier introuvable : ${localPath}` };
+  }
+
       const publicUrl = await uploadToCloudinary(localPath);
       imageUrls.push(publicUrl);
     }
@@ -50,6 +63,20 @@ const publierSurInstagram = async (req, res,silent = false) => {
 
     // 6️⃣ Publier en carousel
     const result = await publishCarouselInstagram(imageUrls, caption);
+
+
+    // 7️⃣ Vérifier l'existence sur Instagram avant de sauvegarder
+const existeSurInstagram = await verifierPublicationInstagram(result.post_id);
+if (!existeSurInstagram) {
+  console.warn("⚠️ La publication n'existe pas sur Instagram, annulation de l'enregistrement.");
+  return { message: 'Échec de la publication sur Instagram. Vérifiez l\'ID.' };
+    }
+    
+    
+// ✅ Récupérer le shortcode
+const shortcode = await getInstagramShortcode(result.post_id);
+const instagramURL = `https://www.instagram.com/p/${shortcode}`;
+
 
     // 7️⃣ Enregistrer l'ID Instagram
     voyage.instagram_post_id = result.post_id;
@@ -59,7 +86,8 @@ const publierSurInstagram = async (req, res,silent = false) => {
     await publicationService.publier({
       plateforme: 'instagram',
       id_voyage: id,
-      id_post_instagram:result.post_id 
+      id_post_instagram: result.post_id,
+      url_post: instagramURL,
     });
 
     // Modifier voyage vers `est_Publie: true`)
@@ -67,25 +95,28 @@ const publierSurInstagram = async (req, res,silent = false) => {
 
     
     console.log("Voyage mis à jour : ", updatedVoyage);
+        console.log("✅ Voyage marqué comme publié sur instagram :",  result.post_id);
 
+return ({ message: 'Publié sur Instagram', instagram_post_id: result.post_id });
 
-
-   if (!silent) {
-      return res.status(200).json({ message: 'Publié sur instagram',  instagram_post_id: result.post_id });
-    }
-
-    // Si silent == true, ne réponds pas au client ici.
-    return { message: 'Publié sur instagram',  instagram_post_id: result.post_id  };
-
-  } catch (error) {
-    if (!silent) {
-      return res.status(500).json({ message: 'Erreur instagram', error: error.message });
-    }
-    // En mode silencieux, on laisse le parent gérer l'erreur
-    throw error;
-  }
+} catch (error) {
+  console.error("Erreur Instagram :", error.message);
+  return ({ message: 'Erreur Instagram', error: error.message });
+}
 };
 
+
+
+//publier instagram seulement sans multiple
+const publierSurInstagralSeule = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const result = await publierSurInstagram(id);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
 
 //recuperer tous les publications 
 const getAllInstagramPublications = async (req, res) => {
@@ -162,7 +193,7 @@ const resetNotificationsCount = (req, res) => {
 // 📝 Supprimer un commentaire
 const supprimerCommentairePublication = async (req, res) => {
   const { commentId } = req.params;
-  console.log('🔍 Suppression du commentaire Facebook...');
+  console.log('🔍 Suppression du commentaire instgram...');
   console.log('🆔 Commentaire ID reçu :', commentId);
   try {
     const reponse = await supprimerCommentaire(commentId);
@@ -192,8 +223,7 @@ const { commentId } = req.params; // 🔁 Au lieu de req.params
 // 📝 Récupérer les nmbr likes d'une publication
 const recupererLikesPublication = async (req, res) => {
   const { instagram_post_id } = req.params;
-
-console.log('ID de la publication Facebook:', instagram_post_id);
+console.log('ID de la publication instagram:', instagram_post_id);
 
 try {
   
@@ -207,7 +237,8 @@ try {
 
 module.exports =
 {
-    publierSurInstagram,
+  publierSurInstagram,
+  publierSurInstagralSeule,
     recupererCommentairesPublication,
      getNotificationsCount,
     resetNotificationsCount,
