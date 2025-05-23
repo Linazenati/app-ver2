@@ -266,6 +266,7 @@ const getCurrentUser = async (userId) => {
 };
 
 
+
 // 🔄 Export des fonctions du service
 module.exports = {
   createUtilisateur,

@@ -1,51 +1,46 @@
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';// Inclut à la fois le JS et Popper.js
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // JS + Popper.js de Bootstrap
 import 'bootstrap/dist/css/bootstrap.min.css';
-import "../../assets/fo/css/style.min.css";  // Import du fichier CSS personnalisé
-import Sidebar from "../../components/bo/Sidebar";  // Import de Dashboard
+import "../../assets/fo/css/style.min.css";
+import "../../assets/css/bo/footer.css";
+
+import Sidebar from "../../components/bo/Sidebar";
 import Footer from "../../components/bo/Footer";
 import Topbar from "../../components/bo/Topbar";
-import { Routes, Route } from "react-router-dom"; // Import de Routes et Route
-import "../../assets/css/bo/footer.css";
-import Agent from "./FormAgent"
-import Utilisateurs from "./ListeUtilisateurs"
-import Creer_omra from "./creer-omra"
-import Liste_omra from "./liste_omra"
-import Creer_voyage from "./creer-voyage"
-import Liste_publication from "./list_publication"
-<<<<<<< HEAD
-import Liste_reservation from "./liste-reservation"
-import Liste_paiement from "./liste-paiement"
-=======
-import List_voyages from "./list-voyages"
->>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
+
+import { Routes, Route } from "react-router-dom";
+
+// Pages backoffice
+import Agent from "./FormAgent";
+import Utilisateurs from "./ListeUtilisateurs";
+import Creer_omra from "./creer-omra";
+import Liste_omra from "./liste_omra";
+import Creer_voyage from "./creer-voyage";
+import Liste_publication from "./list_publication";
+import Liste_reservation from "./liste-reservation";
+import Liste_paiement from "./liste-paiement";
+import List_voyages from "./list-voyages";
 
 const Index = () => {
   return (
     <>
-      
-      <Topbar/>
-      <Sidebar /> 
-<div className="bo-main-content" >
+      <Topbar />
+      <Sidebar />
+
+      <div className="bo-main-content">
         <Routes>
-          <Route path="/agent" element={< Agent />} />
-          <Route path="/utilisateurs" element={< Utilisateurs />} />
-          <Route path="/agent" element={< Agent />} />
-          <Route path="/Creer-omra" element={<Creer_omra />} />
-          <Route path="/Liste_omra" element={<Liste_omra />} />
+          <Route path="/agent" element={<Agent />} />
+          <Route path="/utilisateurs" element={<Utilisateurs />} />
+          <Route path="/creer-omra" element={<Creer_omra />} />
+          <Route path="/liste_omra" element={<Liste_omra />} />
           <Route path="/creer-voyage" element={<Creer_voyage />} />
           <Route path="/liste-publication" element={<Liste_publication />} />
-<<<<<<< HEAD
           <Route path="/liste-reservation" element={<Liste_reservation />} />
           <Route path="/liste-paiement" element={<Liste_paiement />} />
-=======
-      
-            <Route path="/liste-voyages" element={  <List_voyages /> } />
-          
->>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
-
-      </Routes>
+          <Route path="/liste-voyages" element={<List_voyages />} />
+        </Routes>
       </div>
-      <Footer/>
+
+      <Footer />
     </>
   );
 };

@@ -46,12 +46,15 @@ const SettingsPanel = () => {
 
   const { user } = useUser();
   const token = user?.token;
-
+console.log("[SettingsPanel] token depuis useUser:", token);
   // Chargement des données utilisateur
   useEffect(() => {
     const session = JSON.parse(localStorage.getItem("session"));
-    const tokenFromStorage = session?.token;
-    
+     const tokenFromStorage = session?.token;
+    console.log("[SettingsPanel] token depuis localStorage session:", tokenFromStorage);
+
+   
+
     if (!tokenFromStorage) {
       console.error("Aucun token trouvé !");
       setLoadingUser(false);

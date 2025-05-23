@@ -1,5 +1,5 @@
 const express = require('express');
-const path = require('path'); // Ajoute cette ligne pour importer le module path
+const path = require('path');
 
 const utilisateurRouter = require("./utilisateur.router");
 const voyageRouter = require("./voyageorganise.router");
@@ -8,40 +8,32 @@ const authRouter = require("./auth.router");
 const instagramRouter = require("./instagram.router");
 const publicationRouter = require("./publication.router");
 const omraRouter = require("./omra.router");
-<<<<<<< HEAD
 const reservationRouter = require("./reservation.router"); 
 const webhookRouter = require("./webhook.router");
 const paiementRouter = require("./paiement.router"); 
 const factureRouter = require("./facture.router");
 const amadeusRouter = require("./amadeus.router");
-const checkToken = require("./../middlewares/authMiddleware")
-
-module.exports = (app) => {
-  app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
-=======
 const commentaireRouter = require("./commentaire.router");
-
 const hotelRouter = require("./hotel.router");
 
 module.exports = (app) => {
-
-  app.use('/images', express.static(path.join(__dirname,  '..', 'public', 'images')));
-
-      // 🔐 Auth (login/register)
-    app.use("/api/v1/auth", authRouter);
->>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
+  // 📂 Fichiers statiques (images)
+  app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
 
   // 🔐 Auth (login/register)
   app.use("/api/v1/auth", authRouter);
 
-  // 👤 Utilisateurs protégés par JWT
-  app.use("/api/v1/utilisateurs",  utilisateurRouter);
+  // 👤 Utilisateurs
+  app.use("/api/v1/utilisateurs", utilisateurRouter);
 
   // 🧳 Voyages organisés
-  app.use("/api/v1/voyages",  voyageRouter);
+  app.use("/api/v1/voyages", voyageRouter);
 
   // 🕋 Omra
-  app.use("/api/v1/omra",  omraRouter);
+  app.use("/api/v1/omra", omraRouter);
+
+  // 📰 Publications
+  app.use("/api/v1/publication", publicationRouter);
 
   // 📘 Facebook
   app.use("/api/v1/facebook", facebookRouter);
@@ -49,62 +41,38 @@ module.exports = (app) => {
   // 📸 Instagram
   app.use("/api/v1/instagram", instagramRouter);
 
+  // 💳 Paiements
+  app.use("/api/v1/paiements", paiementRouter);
   // 🧾 Paiements Chargily
   app.use("/api/v1/paiements", require('./chargily.router'));
-
+//stripe
   app.use("/api/v1/paiements1", require('./stripe.router'));
 
-  // 📰 Publications
-  app.use("/api/v1/publication", publicationRouter);
-
   // 📑 Réservations
-  app.use("/api/v1/reservations", reservationRouter); 
+  app.use("/api/v1/reservations", reservationRouter);
 
-  // 🧩 Webhooks (utilisé par Chargily)
-app.use("/api/v1/webhook", webhookRouter);
+  // 🧩 Webhooks
+  app.use("/api/v1/webhook", webhookRouter);
 
-// 💳 Paiements
-app.use("/api/v1/paiements", paiementRouter);
-
-// 📂 Factures PDF
+  // 📂 Factures
   app.use("/api/v1/factures", factureRouter);
 
-// 📂 API amadeus pour vols
+  // ✈️ API Amadeus
   app.use("/api/v1/amadeus", amadeusRouter);
 
+  // 💬 Commentaires
+  app.use("/api/v1/commentaires", commentaireRouter);
 
+  // 🏨 Hôtels
+  app.use("/api/v1/hotel", hotelRouter);
 
-<<<<<<< HEAD
-
-  // 📍 Catch all pour les routes non définies dans /api/v1
+  // 🧭 Catch-all pour les routes non définies dans /api/v1
   app.use("/api/v1/", (req, res) => {
-    res.json({ Error: true, msg: "Linaa Bonjour" });
+    res.status(404).json({ error: true, msg: "Route API non trouvée" });
   });
 
-  // 🌍 Catch all général (hors /api/v1)
+  // 🌍 Catch-all général (hors /api/v1) – utile pour SPA
   app.use("/*", (req, res) => {
-    res.json({ msg: "Hi" });
+    res.status(404).json({ msg: "Ressource non trouvée" });
   });
 };
-=======
-  
-    // Routes pour les commentaires
-    app.use("/api/v1/commentaires", commentaireRouter);
-  
-    // Routes pour les hotels
-    app.use("/api/v1/hotel", hotelRouter);
-
-  
-      // 📍 Catch all pour les routes non définies dans /api/v1
-    app.use("/api/v1/", (req, res) => {
-        res.json({ Error: true, msg: "Linaa Bonjour" })
-    });
-
-    
-  // 🌍 Catch all général (hors /api/v1) – utile pour SPA ou test
-    app.use("/app/*", (req, res) => {
-        res.json({ msg:"Hi" })
-    });
-}
-    
->>>>>>> 132de8847958836ba9c8f7be64753e37240aacbc
