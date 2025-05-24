@@ -1,6 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Link , useParams } from 'react-router-dom';
+import publicationService from '../../services-call/publication';
 
 const OmraProgram = () => {
+    //const publicationId = "118";
+    //const { id } = useParams();
+    console.log("Composant monté");
+    const { id } = useParams(); 
+    console.log("ID récupéré:", id)
     const commonStyles = {
         boxSizing: "border-box",
         color: "rgb(33, 37, 41)",
@@ -67,8 +74,27 @@ const OmraProgram = () => {
         "Cadeaux pour les pèlerins",
     ];
 
+    const [idPub, setIdPub] = useState(0);
+
+    const getListPublications = async (idOmra) => {
+        const listPublications = await publicationService.getByIdOmra(idOmra);
+
+        // console.log("=========================================\n")
+        // console.log(listPublications)
+        // console.log("=========================================\n")
+
+        if (listPublications.data.length > 0){
+            setIdPub ( listPublications.data[0].id );
+        }
+    }
+
+    useEffect( ()=>{
+        //Envoyer une requête pour récupérer la liste des publications avec id_omra = id
+        getListPublications( id );
+    }, [] )
+
     return (
-        
+
         <div className="container pt-5" style={{ fontFamily: "Poppins, sans-serif" }}>
             <section id="program">
                 <h3 className="fs-4 mb-4">Programme</h3>
@@ -151,8 +177,11 @@ const OmraProgram = () => {
                             <p className="mb-6 text-blue-800">
                                 Réservez votre Omra et bénéficiez de notre accompagnement complet.
                             </p>
-                            <button type="button" class="btn btn-warning rounded-pill px-4 py-2 fw-semibold text-blue-900">Réserver maintenant</button>
-                        </div>
+                            <Link to={`/web/Reservation/${idPub}`}>
+                                <button type="button" className="btn btn-warning rounded-pill px-4 py-2 fw-semibold text-blue-900">
+                                    Réserver maintenant
+                                </button>
+                            </Link>                        </div>
                     </div>
 
 

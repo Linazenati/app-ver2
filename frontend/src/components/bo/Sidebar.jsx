@@ -65,8 +65,8 @@ function Sidebar() {
       title: "Réservations",
       icon: "fas fa-ticket-alt",
       links: [
-        { to: "/admin/reservations-voyages", label: "Réservations Voyages", icon: "fas fa-calendar-check" },
-        { to: "/admin/reservations-omra", label: "Réservations Omra", icon: "fas fa-calendar-alt" },
+        
+        { to: "/admin/Liste-reservation", label: "Liste des réservations ", icon: "fas fa-calendar-alt" },
       ],
     },
     {
@@ -83,6 +83,14 @@ function Sidebar() {
       links: [
         { to: "/admin/agent", label: "Ajouter un utilisateur", icon: "fas fa-user-plus" },
         { to: "/admin/utilisateurs", label: "Liste des utilisateurs", icon: "fas fa-users" },
+      ],
+    },
+     {
+      title: "Paiements",
+      icon: "fas fa-ticket-alt",
+      links: [
+        
+        { to: "/admin/Liste-paiement", label: "Liste des paiements ", icon: "fas fa-calendar-alt" },
       ],
     },
     {

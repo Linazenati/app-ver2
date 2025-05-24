@@ -1,9 +1,7 @@
 import React from 'react'
 
-function Vols() {
+export default function Vols() {
   return (
-    <div>hhhh</div>
+    <div>Vols</div>
   )
 }
-
-export default Vols
