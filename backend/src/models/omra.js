@@ -10,17 +10,23 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-    Omra.belongsTo(models.Agent, {
-    foreignKey: 'id_agent',
-    as: 'agent'
-    });
-    
+      Omra.belongsTo(models.Agent, {
+        foreignKey: 'id_agent',
+        as: 'agent'
+      });
+      Omra.hasMany(models.Publication, {
+        foreignKey: 'id_omra', // Clé étrangère dans Publication
+        as: 'publications' // Nom de l'association
+      });
     }
+
+
   }
   Omra.init({
-    titre: { type:DataTypes.STRING, allowNull: false },
-   description: DataTypes.STRING,
-    prix: DataTypes.DECIMAL,
+    titre: { type: DataTypes.STRING, allowNull: false },
+    description: DataTypes.STRING,
+    prix: DataTypes.INTEGER,
+    
     date_de_depart: DataTypes.DATE,
     date_de_retour: DataTypes.DATE,
     duree: DataTypes.INTEGER,
@@ -29,8 +35,9 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'disponible'
     },
     image: {
-      type: DataTypes.STRING, allowNull: true }, // ou false si c'est obligatoire
-     est_publier: {
+      type: DataTypes.STRING, allowNull: true
+    }, // ou false si c'est obligatoire
+    estPublie: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
@@ -38,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     }
-    
+
   }, {
     sequelize,
     modelName: 'Omra',

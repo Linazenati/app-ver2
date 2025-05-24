@@ -1,44 +1,38 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Utilisateur extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-     Utilisateur.hasMany(models.Agent, {
-        foreignKey: 'id', // clé étrangère qui pointe vers Utilisateur
-        as: 'agents' // alias pour l'association
- });
+      Utilisateur.hasMany(models.Agent, {
+        foreignKey: 'id',
+        as: 'agents'
+      });
       Utilisateur.hasMany(models.Utilisateur_inscrit, {
-        foreignKey: 'id', // clé étrangère qui pointe vers Utilisateur
-        as: 'utilisateur_inscrits' // alias pour l'association
-       });
-       Utilisateur.hasOne(models.Administrateur, {
-        foreignKey: 'id', // clé étrangère qui pointe vers Utilisateur
-        as: 'administrateurs' // alias pour l'association
-       });
-       Utilisateur.hasMany(models.Client, {
-        foreignKey: 'id', // clé étrangère qui pointe vers Utilisateur
-        as: 'clients' // alias pour l'association
+        foreignKey: 'id',
+        as: 'utilisateur_inscrits'
+      });
+      Utilisateur.hasOne(models.Administrateur, {
+        foreignKey: 'id',
+        as: 'administrateurs'
+      });
+      Utilisateur.hasMany(models.Client, {
+        foreignKey: 'id',
+        as: 'clients'
       });
     }
-    
   }
+
   Utilisateur.init({
     nom: DataTypes.STRING,
-    prenom:DataTypes.STRING,
+    prenom: DataTypes.STRING,
     email: DataTypes.STRING,
     password: DataTypes.STRING,
     telephone: DataTypes.INTEGER,
-    
     role: {
-      type: DataTypes.ENUM('administrateur', 'client', 'agent','Utilisateur_inscrit'),
-      allowNull: false
+      type: DataTypes.ENUM('administrateur', 'client', 'agent', 'Utilisateur_inscrit'),
+      allowNull: false,
+      defaultValue: 'Utilisateur_inscrit'
     },
     dateDerniereConnexion: {
       type: DataTypes.DATE,
@@ -48,9 +42,7 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'Utilisateur',
-
-      
-    
   });
+
   return Utilisateur;
 };

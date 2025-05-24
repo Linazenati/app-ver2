@@ -40,25 +40,7 @@ const createUtilisateur = async (data) => {
 
   // Créer le rôle associé
 
-  if (utilisateur.role === "client") {
-    await Client.create({
-      "id": utilisateur.id,
-      "adresse": "Aucune"
-    });
-  }
-  else if (utilisateur.role === "administrateur") {
-    await Administrateur.create({
-      "id": utilisateur.id,
-    });
-  }
-  else if (utilisateur.role === "agent") {
-    await Agent.create({
-      "id": utilisateur.id,
-      "matricule": "123654",
-      "dateEmbauche": "2024-03-15"
-    });
-  }
-
+  
   return utilisateur;
 };
 
@@ -282,6 +264,7 @@ const getCurrentUser = async (userId) => {
 
   return utilisateur;
 };
+
 
 
 // 🔄 Export des fonctions du service
