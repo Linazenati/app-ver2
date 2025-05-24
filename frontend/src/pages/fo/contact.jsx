@@ -86,14 +86,16 @@ const ContactPage = () => {
 
               <div className="mt-4">
                 <iframe
-                  title="Localisation Ziguade Tour"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d10229.72650095869!2d5.058183215719306!3d36.75323977936149!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12f2cba3ec1e28d1%3A0x3bcd0d2a6c0393e3!2sB%C3%A9ja%C3%AFa!5e0!3m2!1sfr!2sdz!4v1623334573824"
-                  width="100%" 
-                  height="250" 
-                  style={{ border: 0, borderRadius: '8px' }}
-                  allowFullScreen
-                  loading="lazy">
-                </iframe>
+  title="Localisation Ziguade Tour"
+  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3240.7098851684066!2d5.052649615719766!3d36.7493130801656!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128d33b3079266c3%3A0x45f06f1622607ee9!2sZIGUADE%20TOUR!5e0!3m2!1sfr!2sdz!4v1685028150143!5m2!1sfr!2sdz"
+  width="100%"
+  height="250"
+  style={{ border: 0, borderRadius: '8px' }}
+  allowFullScreen=""
+  loading="lazy"
+  referrerPolicy="no-referrer-when-downgrade"
+/>
+
               </div>
             </div>
           </div>
@@ -101,7 +103,7 @@ const ContactPage = () => {
           {/* Formulaire de contact */}
           <div className="col-md-6">
             <form className="contact-form p-4 shadow">
-              <h3 className="mb-4" style={{ color: '#2A5C82' }}>Demande de devis</h3>
+              <h3 className="mb-4" style={{ color: '#2A5C82' }}>Formulaire de contact</h3>
               
               <div className="mb-3">
                 <input 
@@ -135,11 +137,11 @@ const ContactPage = () => {
                   className="form-select"
                   style={{ borderColor: '#2A5C82' }}
                 >
-                  <option>Type de demande</option>
-                  <option>Voyage en Algérie</option>
-                  <option>Omra</option>
-                  <option>Réservation hôtelière</option>
-                  <option>Transport touristique</option>
+                  <option  style={{ fontWeight: 'bold' }}>Type de demande</option>
+                  <option>Voyage/omra</option>
+                  <option>Réservation hôtelière / Vols</option>
+                  <option>Assurance </option>
+                  <option>Visa</option>
                 </select>
               </div>
 
@@ -160,7 +162,7 @@ const ContactPage = () => {
                   fontWeight: '600'
                 }}
               >
-                Envoyer la demande
+                Envoyer le Message
               </button>
             </form>
           </div>

@@ -10,7 +10,6 @@ import Navbar from "../../components/fo/Navbar"
 import Footer from"../../components/fo/Footer"
 
 import Home from "./Home";
-import Hotels from "./Hotels"
 import Vols from "./Vols";
 import Visadetudes from "./Visadetudes";
 import VisaTouristique from "./VisaTouristique";
@@ -24,6 +23,8 @@ import "../../assets/fo/css/style.min.css"
 import Voyage from "./list-voyages"
 import Infos_Voyage from "./infos_voyage"
 import Contact from "./contact"
+import Hotels from "./liste-hotels"
+import InfosHotel from "./infos_hotel"
 const Index = () => {
   useEffect(() => {
     const scripts = [
@@ -87,7 +88,6 @@ const Index = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/hotels" element={<Hotels />} />
         <Route path="/vols" element={<Vols />} />
        <Route path="/visaDetudes" element={<Visadetudes />} />
         <Route path="/visaTouristique" element={<VisaTouristique />} />
@@ -100,6 +100,8 @@ const Index = () => {
         <Route path="/voyage" element={<Voyage />} />
         <Route path="/infos_voyage/:id"  element={<Infos_Voyage/>}/>
          <Route path="/contact" element={<Contact />} />
+        <Route path="/hotel/:ville" element={<Hotels />} />
+        <Route path="/infos_hotel/:id"  element={<InfosHotel/>}/>
       </Routes>
 
       <Footer />

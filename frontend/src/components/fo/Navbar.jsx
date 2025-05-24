@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";// 🔥 Ajoute cette ligne
 import "../../assets/css/navbar.css"
 import Logo from "../../assets/img/LogoZiguade.jpg"
-
+import HotelsDropdown from './Menu-hotels'
 function Navbar() {
   return (
     <div className="container-fluid position-relative nav-bar p-0">
@@ -50,9 +50,7 @@ function Navbar() {
                 </ul>
               </div>
               
-              <Link to="/web/Hotels" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
-                <i className="fas fa-hotel mr-2"></i> Hotels
-              </Link>
+           <HotelsDropdown />
               <Link to="/web/Vols" className="nav-item nav-link d-flex align-items-center" style={{ fontWeight: "bold" }}>
                 <i className="fas fa-plane mr-2"></i> Vols
               </Link>

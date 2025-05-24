@@ -22,11 +22,26 @@ module.exports = (sequelize, DataTypes) => {
       } 
     }
   Hotel.init({
-    nom: DataTypes.STRING,
+     id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    allowNull: false
+  },
+   name: DataTypes.STRING,
+    ville: DataTypes.STRING,
+    region: DataTypes.STRING,
     adresse: DataTypes.STRING,
-    prix_par_nuit: DataTypes.DECIMAL,
-    date_disponibilite: DataTypes.DATE,
-    photo: DataTypes.STRING,
+    latitude: DataTypes.FLOAT,
+    longitude: DataTypes.FLOAT,
+    etoiles: DataTypes.INTEGER,
+photos: {
+  type: DataTypes.JSON, // ✅ PAS STRING
+  allowNull: true
+    },
+    Note_moyenne: DataTypes.FLOAT,
+    Appréciation: DataTypes.STRING,
+    Nombre_avis: DataTypes.INTEGER,
+   
   }, {
     sequelize,
     modelName: 'Hotel',
