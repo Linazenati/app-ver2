@@ -8,7 +8,9 @@ const {
   Utilisateur,
   Publication,
   Voyage,
-  Omra
+  Omra,
+  Vol,
+  Hotel
 } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
@@ -66,6 +68,18 @@ exports.handleStripeWebhook = async (req, res) => {
               { model: Voyage, as: 'voyage', attributes: ['titre'], required: false },
               { model: Omra, as: 'omra', attributes: ['titre'], required: false }
             ]
+          },
+          {
+            model: Vol,
+            as: 'vol',
+            attributes: ['aeroport_depart'],
+            required: false
+          },
+          {
+            model: Hotel,
+            as: 'hotel',
+            attributes: ['name'],
+            required: false
           }
         ]
       });
@@ -77,15 +91,16 @@ exports.handleStripeWebhook = async (req, res) => {
         const utilisateur = reservation.utilisateur_inscrit?.utilisateur;
         const userId = utilisateur?.id || 'unknown';
 
+        // Détermination de la destination
         let destination = 'Destination inconnue';
-        if (reservation.publication) {
-          if (reservation.publication.voyage?.titre) {
-            destination = reservation.publication.voyage.titre;
-          } else if (reservation.publication.omra?.titre) {
-            destination = reservation.publication.omra.titre;
-          } else if (reservation.publication.titre) {
-            destination = reservation.publication.titre;
-          }
+        if (reservation.publication?.voyage?.titre) {
+          destination = reservation.publication.voyage.titre;
+        } else if (reservation.publication?.omra?.titre) {
+          destination = reservation.publication.omra.titre;
+        } else if (reservation.vol?.aeroport_depart) {
+          destination = `Vol depuis ${reservation.vol.aeroport_depart}`;
+        } else if (reservation.hotel?.name) {
+          destination = `Hôtel ${reservation.hotel.name}`;
         }
 
         const nom = utilisateur?.nom || 'Nom inconnu';
@@ -102,7 +117,7 @@ exports.handleStripeWebhook = async (req, res) => {
         const facturePath = path.join(dossierFactures, `facture-${userId}-${paiement.id}.pdf`);
 
         await generateInvoice(
-          { 
+          {
             numeroFacture: `INV-${paiement.id}`,
             montant,
             nom,
@@ -135,7 +150,7 @@ exports.handleStripeWebhook = async (req, res) => {
     return res.status(200).json({ received: true });
 
   } catch (error) {
-    console.error('Erreur traitement webhook:', error);
+    console.error('Erreur traitement webhook Stripe:', error);
     return res.status(500).json({ error: error.message });
   }
 };

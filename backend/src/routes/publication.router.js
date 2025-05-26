@@ -6,9 +6,8 @@ const publicationController = require('../controllers/publication.controller');
 router.post('/:id/publier-multi', publicationController.publierMulti);
 
 router.get('/', publicationController.getAll);
-router.get('/by_id_omra/:id_omra', publicationController.getByIdOmra);
 router.get('/:id', publicationController.getById);
-
+router.get('/by_id_omra/:id_omra', publicationController.getByIdOmra);
 // ✅ Récupérer les publications d'un voyage publié par ID
 router.get('/voyages/:id/publications', publicationController.getPublicationsByVoyageId);
 

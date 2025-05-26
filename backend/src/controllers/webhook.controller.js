@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra } = require('../models');
+const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
 
@@ -42,6 +42,16 @@ exports.handleChargilyWebhook = async (req, res) => {
               { model: Voyage, as: 'voyage', attributes: ['titre'] },
               { model: Omra, as: 'omra', attributes: ['titre'] }
             ]
+          },
+          {
+            model: Vol,
+            as: 'vol',
+            attributes: ['aeroport_depart']
+          },
+          {
+            model: Hotel,
+            as: 'hotel',
+            attributes: ['name']
           }
         ]
       });
@@ -58,11 +68,16 @@ exports.handleChargilyWebhook = async (req, res) => {
         const telephone = utilisateur?.telephone || '';
         const montant = data.amount;
 
+        // Détermination de la destination
         let destination = 'Destination inconnue';
         if (reservation.publication?.voyage?.titre) {
           destination = reservation.publication.voyage.titre;
         } else if (reservation.publication?.omra?.titre) {
           destination = reservation.publication.omra.titre;
+        } else if (reservation.vol?.aeroport_depart) {
+          destination = `Vol depuis ${reservation.vol.aeroport_depart}`;
+        } else if (reservation.hotel?.nom) {
+          destination = `Hôtel ${reservation.hotel.name}`;
         }
 
         const dossierFactures = path.join(__dirname, '..', 'factures');

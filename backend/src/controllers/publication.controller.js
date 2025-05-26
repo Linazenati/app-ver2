@@ -1,82 +1,80 @@
 // Importation des services nécessaires
-import publicationService from '../services/publication.service.js';
-import facebookController from './facebook.controller.js';
-import instagramController from './instagram.controller.js';
-import siteController from './voyageorganise.controller.js';
-import siteController1 from './omra.controller.js';
-
-import voyageService from "../services/voyageorganise.service.js";
-import omraService from '../services/omra.service.js';
-
+const publicationService = require('../services/publication.service');
+const facebookController = require('./facebook.controller');
+const instagramController = require('./instagram.controller');
+const siteController = require('./voyageorganise.controller')
+const voyageService = require("../services/voyageorganise.service");
 
 // Fonction pour publier un voyage sur plusieurs plateformes (site, Facebook, Instagram)
 const publierMulti = async (req, res) => {
   const id = req.params.id;
-  const { plateformes, type } = req.body;
+  if (!id) {
+  return res.status(400).json({ message: "ID du voyage manquant dans l'URL" });
+}
+  const { plateformes } = req.body; 
   const resultats = {};
+console.log("Plateformes reçues :", plateformes);
 
-  if (!id || !type) {
-    return res.status(400).json({ message: "ID ou type de publication manquant." });
-  }
 
   try {
-    let item;
-    if (type === "voyage") {
-      item = await voyageService.getVoyageById(id);
-    } else if (type === "omra") {
-      item = await omraService.getOmraById(id);
-    } else {
-      return res.status(400).json({ message: "Type de publication invalide." });
+    // 1. Vérifier que le voyage existe
+    const voyage = await voyageService.getVoyageById(id);
+    if (!voyage) {
+      return res.status(404).json({ message: "Voyage non trouvé" });
     }
+    
 
-    if (!item) {
-      return res.status(404).json({ message: `${type} non trouvé(e)` });
-    }
 
-    // Lancer les publications
+ // 2. Lancer la publication pour chaque plateforme demandée
+   //site
     if (plateformes.includes("site")) {
       try {
-        const siteRes = type === "voyage"
-          ? await siteController.publishToSite(id, true)
-          : await siteController1.publishToSite(req, res, true); // vrai = appel silencieux
+        const siteRes = await siteController.publishToSite(voyage.id); // true = mode silencieux (pas res.json)
         resultats.site = siteRes;
       } catch (err) {
         resultats.site = { error: err.message };
       }
     }
 
+    // Facebook
     if (plateformes.includes("facebook")) {
       try {
-        const fbRes = await facebookController.publierSurFacebook(id, true);
+        const fbRes = await facebookController.publierSurFacebook(voyage.id); // true = mode silencieux (pas res.json)
         resultats.facebook = fbRes;
       } catch (err) {
         resultats.facebook = { error: err.message };
       }
     }
 
+    // Instagram
     if (plateformes.includes("instagram")) {
       try {
-        const instaRes = await instagramController.publierSurInstagram(id);
+        const instaRes = await instagramController.publierSurInstagram(voyage.id);
         resultats.instagram = instaRes;
       } catch (err) {
         resultats.instagram = { error: err.message };
       }
     }
+    // Ajoute ici d'autres plateformes si nécessaire...
 
     res.status(200).json({
-      message: `Publication multiple de ${type} terminée.`,
+      message: 'Publication multiple terminée.',
       resultats
     });
 
-  } catch (error) {
-    console.error(`Erreur publication multiple ${type} :`, error);
-    res.status(500).json({ message: `Erreur publication ${type}`, error: error.message });
+  } catch (err) {
+    console.error('Erreur publication multiple :', err.message);
+    res.status(500).json({ message: 'Erreur publication multiple', error:err.message });
   }
 };
 
 
-// ✅ Récupérer toutes les publications
-const getAll = async (req, res) => {
+
+
+
+// ✅ Récupérer toutes les publications avec recherche, pagination, tri et filtre par type
+
+  const getAll = async (req, res) => {
   try {
     const publications = await publicationService.getAll();
     res.status(200).json(publications);
@@ -86,7 +84,7 @@ const getAll = async (req, res) => {
 };
 
 
-// ✅ Récupère une publication par ID
+// Récupère une publication par ID
 const getById = async (req, res) => {
   try {
     const pub = await publicationService.getById(req.params.id);
@@ -111,26 +109,29 @@ const getByIdOmra = async (req, res) => {
   }
 };
 
-// ✅ Récupère les publications d’un voyage publié
+
+
+// ✅ Récupérer les publications d'un voyage publié par ID
 const getPublicationsByVoyageId = async (req, res) => {
   const voyageId = req.params.id;
-
+  
   try {
+    // Vérifie que le voyage est publié
     const voyage = await voyageService.getVoyageById(voyageId);
     if (!voyage || !voyage.est_publier) {
       return res.status(404).json({ message: "Voyage non trouvé ou non publié" });
     }
 
+    // Récupère les publications liées à ce voyage
     const publications = await publicationService.getPublicationsByVoyageId(voyageId);
     res.status(200).json(publications);
-
+    
   } catch (error) {
     console.error('Erreur récupération des publications :', error.message);
     res.status(500).json({ message: 'Erreur lors de la récupération des publications', error: error.message });
   }
 };
-
-export {
+module.exports = {
   publierMulti,
   getAll,
   getById,

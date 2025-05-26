@@ -8,7 +8,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'id_publication',
         as: 'publication',
       });
-      
+
       Reservation.belongsTo(models.Utilisateur_inscrit, {
         foreignKey: 'id_utilisateur_inscrit',
         as: 'utilisateur_inscrit',
@@ -29,14 +29,17 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Reservation.init({
-  
+
     statut: {
-  type: DataTypes.ENUM('en attente', 'confirmée', 'annulée', 'terminée'),
-  allowNull: false,
-  defaultValue: 'en attente'
-},
+      type: DataTypes.ENUM('en attente', 'confirmée', 'annulée', 'terminée'),
+      allowNull: false,
+      defaultValue: 'en attente'
+    },
     id_utilisateur_inscrit: DataTypes.INTEGER,
-    id_publication: DataTypes.INTEGER,
+    id_publication: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
     id_vol: DataTypes.INTEGER,
     id_hotel: DataTypes.INTEGER,
 
@@ -46,6 +49,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
     date_retour: {
+      
       type: DataTypes.DATE,
       allowNull: true, // Omra peut ne pas avoir de retour
     },
@@ -61,7 +65,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ENUM('Single', 'Double', 'Triple'),
       allowNull: true,
     },
-    
+
     ville_residence: {
       type: DataTypes.STRING,
       allowNull: true,

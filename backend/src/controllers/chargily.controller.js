@@ -1,5 +1,5 @@
 const chargilyService = require('../services/chargily.service');
-const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra } = require('../models');
+const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel } = require('../models');
 
 exports.initiatePayment = async (req, res) => {
   try {
@@ -30,6 +30,14 @@ exports.initiatePayment = async (req, res) => {
             { model: Voyage, as: 'voyage' },
             { model: Omra, as: 'omra' }
           ]
+        },
+        {
+          model: Vol,
+          as: 'vol'
+        },
+        {
+          model: Hotel,
+          as: 'hotel'
         }
       ]
     });
@@ -42,49 +50,64 @@ exports.initiatePayment = async (req, res) => {
     const utilisateur = utilisateurInscrit?.utilisateur;
     const publicationData = reservation.publication;
 
-    if (!utilisateur || !publicationData) {
-      return res.status(404).json({ message: 'Utilisateur ou publication associé introuvable.' });
+    if (!utilisateur) {
+      return res.status(404).json({ message: 'Utilisateur inscrit introuvable.' });
     }
 
-    // Récupérer le prix à partir de Omra ou Voyage
+    // Récupérer le prix et le titre depuis publication, vol ou hotel
     let prix = null;
     let titre = 'Réservation Ziguade Tour';
 
-    if (publicationData.omra) {
+    if (publicationData?.omra) {
       prix = publicationData.omra.prix;
       titre = publicationData.omra.titre;
-    } else if (publicationData.voyage) {
+    } else if (publicationData?.voyage) {
       prix = publicationData.voyage.prix;
       titre = publicationData.voyage.titre;
+    } else if (reservation.vol) {
+      console.log("Vol récupéré :", reservation.vol);
+
+      prix = parseFloat(reservation.vol.prix);
+      titre = `Vol ${reservation.vol.aeroport_depart}`;
+    } else if (reservation.hotel) {
+      prix = parseFloat(reservation.hotel.prix_par_nuit);
+      titre = `Hôtel ${reservation.hotel.name}`;
     }
 
     if (!prix) {
-      return res.status(400).json({ message: "Aucun prix trouvé pour la publication liée." });
+      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation." });
     }
-    const montantDA = publicationData.voyage?.prix || publicationData.omra?.prix;
-    const montantCentimes = montantDA * 1;
+    // Fonction utilitaire pour convertir les devises (exemple statique)
+    function convertirEnDZD(prix, devise) {
+      const tauxChange = {
+        EUR: 245, // Exemple de taux, à ajuster
+        USD: 140,
+        DZD: 1
+      };
+      return Math.round(parseFloat(prix) * (tauxChange[devise] || 1));
+    }
+
+    const montantCentimes = convertirEnDZD(prix, reservation.vol?.devise || 'DZD');// Chargily accepte le montant en DZD entier
 
     // Construction des données de paiement
     const paymentData = {
-  amount: montantCentimes,    // entier
-  currency: "dzd",
-  payment_method: "edahabia",
-  success_url: "http://localhost:5173/web",
-  failure_url: "http://localhost:5173/web",
-  webhook_endpoint: 'https://dc51-105-103-5-31.ngrok-free.app/api/v1/webhook/chargily',
-  description: `Paiement pour ${titre}`,
-  locale: "fr",
-  shipping_address: {
-  "country": "DZ",
-  "city": "Algiers",
-  "address": "123 Rue Didouche Mourad"
-},
-  collect_shipping_address: true,
-  amount_discount: 0,
-  metadata: [{}],
-  
-};
-
+      amount: montantCentimes,
+      currency: "dzd",
+      payment_method: "edahabia",
+      success_url: "http://localhost:5173/web",
+      failure_url: "http://localhost:5173/web",
+      webhook_endpoint: 'https://dc51-105-103-5-31.ngrok-free.app/api/v1/webhook/chargily',
+      description: `Paiement pour ${titre}`,
+      locale: "fr",
+      shipping_address: {
+        country: "DZ",
+        city: "Algiers",
+        address: "123 Rue Didouche Mourad"
+      },
+      collect_shipping_address: true,
+      amount_discount: 0,
+      metadata: [{}]
+    };
 
     // Appel à l’API Chargily
     const response = await chargilyService.createPaymentLink(paymentData);
