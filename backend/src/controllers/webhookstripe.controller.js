@@ -10,7 +10,8 @@ const {
   Voyage,
   Omra,
   Vol,
-  Hotel
+  Hotel,
+  Assurance
 } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
@@ -84,6 +85,12 @@ exports.handleStripeWebhook = async (req, res) => {
         ]
       });
 
+      // Récupérer l'assurance liée au paiement (si existante)
+      let assurance = null;
+      if (paiement.id_assurance) {
+        assurance = await Assurance.findByPk(paiement.id_assurance);
+      }
+
       if (reservation) {
         reservation.statut = 'confirmée';
         await reservation.save();
@@ -109,13 +116,21 @@ exports.handleStripeWebhook = async (req, res) => {
         const telephone = utilisateur?.telephone || '';
         const montant = session.amount_total || 0;
 
+        // Infos assurance à inclure dans la facture
+        let assuranceInfo = '';
+        if (assurance) {
+          destination = `Type d'assurance : ${assurance.type}\nDescription : ${assurance.description || 'N/A'}\nPrix assurance : ${assurance.prix} DZD\n`;
+        }
+
         const dossierFactures = path.join(__dirname, '..', 'factures');
         if (!fs.existsSync(dossierFactures)) {
           fs.mkdirSync(dossierFactures, { recursive: true });
         }
 
         const facturePath = path.join(dossierFactures, `facture-${userId}-${paiement.id}.pdf`);
-
+        console.log('Reservation ID:', reservation.id);
+        console.log('Vol lié à la réservation:', reservation.vol);
+        console.log('Aéroport de départ:', reservation.vol?.aeroport_depart);
         await generateInvoice(
           {
             numeroFacture: `INV-${paiement.id}`,
@@ -126,7 +141,8 @@ exports.handleStripeWebhook = async (req, res) => {
             telephone,
             date: new Date(),
             statut: paiement.statut,
-            destination
+            destination,
+            assurance: assuranceInfo
           },
           facturePath
         );
@@ -135,7 +151,7 @@ exports.handleStripeWebhook = async (req, res) => {
           await sendMail({
             to: email,
             subject: 'Votre facture - ZIGUADE TOUR',
-            text: `Bonjour ${prenom},\n\nMerci pour votre paiement. Veuillez trouver ci-joint votre facture.\n\nL’équipe ZIGUADE TOUR`,
+            text: `Bonjour ${prenom},\n\nMerci pour votre paiement. Veuillez trouver ci-joint votre facture.\n\n${assuranceInfo}\nL’équipe ZIGUADE TOUR`,
             attachments: [
               {
                 filename: `facture-${userId}-${paiement.id}.pdf`,

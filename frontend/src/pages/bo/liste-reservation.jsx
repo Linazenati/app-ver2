@@ -123,18 +123,18 @@ export default function ListeReservationsPage() {
 
   const filteredReservations = reservations?.rows?.filter(res => {
     // Filtre par texte de recherche
-    const matchesSearch = searchText 
+    const matchesSearch = searchText
       ? Object.values(res).some(
-          val => val && val.toString().toLowerCase().includes(searchText.toLowerCase())
-        )
+        val => val && val.toString().toLowerCase().includes(searchText.toLowerCase())
+      )
       : true;
-    
+
     // Filtre par date de réservation
     let matchesDate = true;
     if (dateRangeFilter && dateRangeFilter[0] && dateRangeFilter[1]) {
       const reservationDate = dayjs(res.createdAt);
-      matchesDate = reservationDate.isAfter(dateRangeFilter[0]) && 
-                   reservationDate.isBefore(dateRangeFilter[1]);
+      matchesDate = reservationDate.isAfter(dateRangeFilter[0]) &&
+        reservationDate.isBefore(dateRangeFilter[1]);
     }
 
     return matchesSearch && matchesDate;
@@ -197,23 +197,58 @@ export default function ListeReservationsPage() {
       }
     },
     {
-      title: "Publication",
-      key: "publication",
-      render: (_, record) => {
-        const publication = record.publication;
-        const titre = publication?.voyage?.titre || publication?.omra?.titre || 'Titre N/A';
-        const description = publication?.voyage?.description || publication?.omra?.description || 'Description N/A';
-        const prix = publication?.voyage?.prix || publication?.omra?.prix || 'Prix N/A';
+  title: "Publication / Réservation",
+  key: "publication",
+  render: (_, record) => {
+    const publication = record.publication;
+    const hotel = record.hotel;
+    const vol = record.vol;
 
-        return (
-          <div>
-            <div><strong>Titre :</strong> {titre}</div>
-            <div><strong>Description :</strong> {description}</div>
-            <div><strong>Prix :</strong> {prix} DA</div>
-          </div>
-        );
-      }
-    },
+    if (publication?.voyage) {
+      return (
+        <div>
+          <div><strong>Titre :</strong> {publication.voyage.titre}</div>
+          <div><strong>Description :</strong> {publication.voyage.description}</div>
+          <div><strong>Prix :</strong> {publication.voyage.prix} DA</div>
+        </div>
+      );
+    }
+
+    if (publication?.omra) {
+      return (
+        <div>
+          <div><strong>Titre :</strong> {publication.omra.titre}</div>
+          <div><strong>Description :</strong> {publication.omra.description}</div>
+          <div><strong>Prix :</strong> {publication.omra.prix} DA</div>
+        </div>
+      );
+    }
+
+    if (hotel) {
+      return (
+        <div>
+          <div><strong>Nom Hôtel :</strong> {hotel.name}</div>
+          <div><strong>Adresse :</strong> {hotel.adresse}, {hotel.ville}, {hotel.region}</div>
+          <div><strong>Note Moyenne :</strong> {hotel.Note_moyenne ? hotel.Note_moyenne + ' ★' : 'N/A'}</div>
+        </div>
+      );
+    }
+
+    if (vol) {
+      return (
+        <div>
+          <div><strong>Vol :</strong> {vol.numero_vol} - {vol.compagnie_aerienne}</div>
+          <div><strong>Trajet :</strong> {vol.aeroport_depart} → {vol.aeroport_arrivee} ({vol.duree})</div>
+          <div><strong>Prix :</strong> {vol.prix} {vol.devise}</div>
+        </div>
+      );
+    }
+
+    return <div>Aucune information disponible</div>;
+  }
+},
+
+
     {
       title: "Dates",
       key: "dates",
@@ -299,7 +334,7 @@ export default function ListeReservationsPage() {
             style={{ width: 300 }}
           />
         </div>
-        
+
         <Space>
           <RangePicker
             placeholder={["Date début", "Date fin"]}
@@ -307,14 +342,14 @@ export default function ListeReservationsPage() {
             value={dateRangeFilter}
             style={{ width: 250 }}
           />
-          
-          <Button 
-            icon={<FilterOutlined />} 
+
+          <Button
+            icon={<FilterOutlined />}
             onClick={resetFilters}
           >
             Réinitialiser
           </Button>
-          
+
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -356,7 +391,7 @@ export default function ListeReservationsPage() {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Utilisateur" span={2}>
-              Nom: {getUserInfo(currentReservation)?.nom} 
+              Nom: {getUserInfo(currentReservation)?.nom}
               <br />
               Prénom: {getUserInfo(currentReservation)?.prenom}
               <br />

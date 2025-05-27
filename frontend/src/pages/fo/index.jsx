@@ -25,6 +25,7 @@ import Reservation1 from "./Reservation1"
 
 import Conditions from "./Conditions"
 import ChoixPaiement from "./ChoixPaiement"
+import ChoixPaiement1 from "./ChoixPaiement1"
 import Voyage from "./list-voyages"
 import Infos_Voyage from "./infos_voyage"
 import Contact from "./contact"
@@ -104,6 +105,7 @@ const Index = () => {
                 <Route path="/Reservation1/:id" element={<Reservation1 />} />
 
         <Route path="/Reservations/:id/choix-paiement" element={<ChoixPaiement />} />
+        <Route path="/Reservations/:idAssurance/choix-paiement1" element={<ChoixPaiement1 />} />
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/Conditions" element={<Conditions />} />
         <Route path="/voyage" element={<Voyage />} />

@@ -1,82 +1,90 @@
 const chargilyService = require('../services/chargily.service');
-const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel } = require('../models');
+const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel, Assurance } = require('../models');
 
 exports.initiatePayment = async (req, res) => {
   try {
-    const { reservationId } = req.body;
+    const { reservationId, assuranceId } = req.body;
     console.log('Données reçues pour initier paiement :', req.body);
 
-    if (!reservationId) {
-      return res.status(400).json({ message: "L'ID de la réservation est requis." });
+    let reservation = null;
+
+    if (reservationId) {
+      // Récupération de la réservation avec toutes les associations nécessaires
+      reservation = await Reservation.findByPk(reservationId, {
+        include: [
+          {
+            model: Utilisateur_inscrit,
+            as: 'utilisateur_inscrit',
+            include: [
+              {
+                model: Utilisateur,
+                as: 'utilisateur'
+              }
+            ]
+          },
+          {
+            model: Publication,
+            as: 'publication',
+            include: [
+              { model: Voyage, as: 'voyage' },
+              { model: Omra, as: 'omra' }
+            ]
+          },
+          {
+            model: Vol,
+            as: 'vol'
+          },
+          {
+            model: Hotel,
+            as: 'hotel'
+          }
+        ]
+      });
+
+      if (!reservation) {
+        return res.status(404).json({ message: 'Réservation introuvable.' });
+      }
     }
 
-    // Récupération de la réservation avec toutes les associations nécessaires
-    const reservation = await Reservation.findByPk(reservationId, {
-      include: [
-        {
-          model: Utilisateur_inscrit,
-          as: 'utilisateur_inscrit',
-          include: [
-            {
-              model: Utilisateur,
-              as: 'utilisateur'
-            }
-          ]
-        },
-        {
-          model: Publication,
-          as: 'publication',
-          include: [
-            { model: Voyage, as: 'voyage' },
-            { model: Omra, as: 'omra' }
-          ]
-        },
-        {
-          model: Vol,
-          as: 'vol'
-        },
-        {
-          model: Hotel,
-          as: 'hotel'
-        }
-      ]
-    });
-
-    if (!reservation) {
-      return res.status(404).json({ message: 'Réservation introuvable.' });
-    }
-
-    const utilisateurInscrit = reservation.utilisateur_inscrit;
-    const utilisateur = utilisateurInscrit?.utilisateur;
-    const publicationData = reservation.publication;
-
-    if (!utilisateur) {
-      return res.status(404).json({ message: 'Utilisateur inscrit introuvable.' });
-    }
-
-    // Récupérer le prix et le titre depuis publication, vol ou hotel
     let prix = null;
-    let titre = 'Réservation Ziguade Tour';
+    let titre = 'Paiement Ziguade Tour';
+    let utilisateur = null;
 
-    if (publicationData?.omra) {
-      prix = publicationData.omra.prix;
-      titre = publicationData.omra.titre;
-    } else if (publicationData?.voyage) {
-      prix = publicationData.voyage.prix;
-      titre = publicationData.voyage.titre;
-    } else if (reservation.vol) {
-      console.log("Vol récupéré :", reservation.vol);
+    if (assuranceId) {
+      const assurance = await Assurance.findByPk(assuranceId);
+      if (!assurance) {
+        return res.status(404).json({ message: "Assurance introuvable." });
+      }
+      prix = assurance.prix;
+      titre = `Assurance ${assurance.type}`;
+    } else if (reservation) {
+      const utilisateurInscrit = reservation.utilisateur_inscrit;
+      utilisateur = utilisateurInscrit?.utilisateur;
+      const publicationData = reservation.publication;
 
-      prix = parseFloat(reservation.vol.prix);
-      titre = `Vol ${reservation.vol.aeroport_depart}`;
-    } else if (reservation.hotel) {
-      prix = parseFloat(reservation.hotel.prix_par_nuit);
-      titre = `Hôtel ${reservation.hotel.name}`;
+      if (!utilisateur) {
+        return res.status(404).json({ message: 'Utilisateur inscrit introuvable.' });
+      }
+
+      if (publicationData?.omra) {
+        prix = publicationData.omra.prix;
+        titre = publicationData.omra.titre;
+      } else if (publicationData?.voyage) {
+        prix = publicationData.voyage.prix;
+        titre = publicationData.voyage.titre;
+      } else if (reservation.vol) {
+        prix = parseFloat(reservation.vol.prix);
+        titre = `Vol ${reservation.vol.aeroport_depart}`;
+      } else if (reservation.hotel) {
+        prix = parseFloat(reservation.hotel.prix_par_nuit);
+        titre = `Hôtel ${reservation.hotel.name}`;
+      }
     }
 
     if (!prix) {
-      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation." });
+      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation ou l'assurance." });
     }
+
     // Fonction utilitaire pour convertir les devises (exemple statique)
     function convertirEnDZD(prix, devise) {
       const tauxChange = {
@@ -87,7 +95,7 @@ exports.initiatePayment = async (req, res) => {
       return Math.round(parseFloat(prix) * (tauxChange[devise] || 1));
     }
 
-    const montantCentimes = convertirEnDZD(prix, reservation.vol?.devise || 'DZD');// Chargily accepte le montant en DZD entier
+    const montantCentimes = convertirEnDZD(prix, reservation?.vol?.devise || 'DZD'); // Chargily accepte le montant en DZD entier
 
     // Construction des données de paiement
     const paymentData = {
@@ -122,7 +130,8 @@ exports.initiatePayment = async (req, res) => {
       methode_paiement: 'Chargily',
       statut: 'en_attente',
       lien_paiement: response.data.checkout_url,
-      id_reservation: reservationId,
+      id_reservation: reservationId || null,
+      id_assurance: assuranceId || null
     });
 
     return res.status(200).json({

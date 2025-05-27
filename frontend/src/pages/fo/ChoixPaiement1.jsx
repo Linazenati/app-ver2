@@ -10,7 +10,6 @@ import { useParams } from 'react-router-dom';
 
 const ChoixPaiement = () => {
     const [formData, setFormData] = useState({
-
         prenom: "",
         nom: "",
         telephone: ""
@@ -24,8 +23,6 @@ const ChoixPaiement = () => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                // Récupérer le token en localStorage ou via contexte user
-                // 1. Récupération du token
                 const session = JSON.parse(localStorage.getItem("session"));
                 const token = user?.token || session?.token;
 
@@ -41,21 +38,16 @@ const ChoixPaiement = () => {
                     }
                 };
 
-                // Récupérer données user depuis backend
                 const response = await authService.getCurrentUser(config);
 
                 if (response.data) {
                     setCurrentUser(response.data);
 
-                    // Pré-remplir le formulaire avec les infos user
                     setFormData(prev => ({
                         ...prev,
-
                         prenom: response.data.prenom || "",
                         nom: response.data.nom || "",
-
                         telephone: response.data.telephone ? response.data.telephone.toString() : "",
-                        // ... autres champs si besoin
                     }));
                 } else {
                     console.error("Utilisateur non récupéré");
@@ -68,10 +60,9 @@ const ChoixPaiement = () => {
         fetchUser();
     }, []);
 
-    const { id: reservationId } = useParams();// récupère l'ID depuis l'URL
-    console.log("ID de réservation depuis l'URL :", reservationId);
-
-
+    // 🔥 Modification ici : on récupère l'ID d'assurance depuis l'URL
+    const { idAssurance } = useParams(); 
+    console.log("ID d'assurance depuis l'URL :", idAssurance);
 
     const handleConfirm = async () => {
         if (formData.methodePaiement === "dahabia") {
@@ -84,7 +75,7 @@ const ChoixPaiement = () => {
                 success_url: "http://localhost:5173/web",
                 webhook_url: "https://a3ae-105-103-5-31.ngrok-free.app/api/v1/webhook/chargily",
                 mode: "EDAHABIA",
-                reservationId: reservationId // 🔥 Ajout de l'ID
+                assuranceId: idAssurance // 🔥 Utilisation de idAssurance ici
             };
 
             try {
@@ -101,7 +92,7 @@ const ChoixPaiement = () => {
             }
         } else if (formData.methodePaiement === "international") {
             try {
-                const response = await stripeService.initiatePayment(reservationId, token);
+                const response = await stripeService.initiatePayment(idAssurance, token); // 🔥 Utilisation de idAssurance ici aussi
                 const paymentLink = response.data.lien_paiement;
 
                 if (paymentLink) {
@@ -137,12 +128,12 @@ const ChoixPaiement = () => {
                                                         <button
                                                             type="button"
                                                             className={`btn ${index === 1
-                                                                ? 'btn-warning' // Étape actuelle (Choix du paiement)
+                                                                ? 'btn-warning'
                                                                 : index < 1
                                                                     ? 'btn-warning'
                                                                     : 'btn-outline-warning'
                                                                 } rounded-25`}
-                                                            disabled={index > 1} // Désactive les étapes futures
+                                                            disabled={index > 1}
                                                         >
                                                             {index + 1}
                                                         </button>
@@ -161,8 +152,6 @@ const ChoixPaiement = () => {
             </section>
 
             <div className="container py-5">
-
-                {/* Section Paiement */}
                 <div className="row mb-4">
                     <div className="col-md-12">
                         <h5 className="mb-4" style={{ color: '#003366' }}>Mode de paiement</h5>
@@ -211,7 +200,6 @@ const ChoixPaiement = () => {
                                     />
                                 </div>
 
-                                {/* Bouton de confirmation */}
                                 <div className="text-end mt-4">
                                     <button
                                         className="btn"
