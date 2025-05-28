@@ -1,4 +1,4 @@
-const stripeService = require('../services/stripe.service');
+ const stripeService = require('../services/stripe.service');
 const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel, Assurance } = require('../models');
 
 exports.initiatePayment = async (req, res) => {
@@ -89,6 +89,9 @@ exports.initiatePayment = async (req, res) => {
       id_reservation: reservationId || null,
       id_assurance: assuranceId || null
     });
+console.log('Paiement ID:', paiement.id);
+console.log('Réservation ID:', reservationId);
+console.log('Assurance ID:', assuranceId);
 
     // Préparation des données pour Stripe
     const stripeData = {

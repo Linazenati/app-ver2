@@ -101,7 +101,11 @@ const ChoixPaiement = () => {
             }
         } else if (formData.methodePaiement === "international") {
             try {
-                const response = await stripeService.initiatePayment(reservationId, token);
+                const paymentData = {
+                    assuranceId: null,
+                    reservationId: reservationId // explicitement null si non utilisé
+                };
+                const response = await stripeService.initiatePayment(paymentData, token);
                 const paymentLink = response.data.lien_paiement;
 
                 if (paymentLink) {

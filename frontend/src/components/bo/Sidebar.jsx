@@ -87,17 +87,25 @@ function Sidebar() {
     },
      {
       title: "Paiements",
-      icon: "fas fa-ticket-alt",
+      icon: "fas fa-money-bill-wave",
       links: [
         
         { to: "/admin/Liste-paiement", label: "Liste des paiements ", icon: "fas fa-calendar-alt" },
       ],
     },
     {
+  title: "Assurances",
+  icon: "fas fa-file-contract",
+  links: [
+    { to: "/admin/Liste-assurance", label: "Liste des assurances", icon: "fas fa-calendar-alt" },
+  ],
+}
+,
+    {
       title: "Paramètres",
       icon: "fas fa-cogs",
       links: [
-        { to: "/admin/configuration-site", label: "Configuration du site", icon: "fas fa-cogs" },
+        { to: "/admin/configuration-api", label: "Configuration des APIs", icon: "fas fa-cogs" },
         { to: "/admin/securite", label: "Sécurité & Accès", icon: "fas fa-shield-alt" },
       ],
     },

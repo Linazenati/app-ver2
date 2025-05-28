@@ -80,9 +80,19 @@ export default function ListePaiementsPage() {
   };
 
   const getUserInfo = (paiement) => {
-    return paiement?.reservation?.utilisateur_inscrit?.utilisateur || 
-           paiement?.reservation?.utilisateur_inscrit ||
-           null;
+    // Si le paiement est lié à une réservation
+    if (paiement?.reservation) {
+      return paiement.reservation.utilisateur_inscrit?.utilisateur || 
+             paiement.reservation.utilisateur_inscrit ||
+             null;
+    }
+    // Si le paiement est lié à une assurance
+    else if (paiement?.assurance) {
+      return paiement.assurance.utilisateur_inscrit?.utilisateur ||
+             paiement.assurance.utilisateur_inscrit ||
+             null;
+    }
+    return null;
   };
 
   const normalizeStatus = (status) => {
@@ -115,8 +125,8 @@ export default function ListePaiementsPage() {
     // Filtre par texte de recherche
     const matchesSearch = searchText 
       ? Object.values(p).some(val =>
-          val && val.toString().toLowerCase().includes(searchText.toLowerCase())
-      ): true;
+          val && val.toString().toLowerCase().includes(searchText.toLowerCase()))
+      : true;
       
     // Filtre par statut (normalisé)
     const matchesStatus = statusFilter 
@@ -153,8 +163,18 @@ export default function ListePaiementsPage() {
       title: "Montant",
       dataIndex: "montant",
       key: "montant",
-      render: (montant) => `${montant} DA`,
-      sorter: (a, b) => a.montant - b.montant
+      render: (montant, record) => {
+        // Si c'est un paiement d'assurance et que montant est vide, utiliser le prix de l'assurance
+        if (record.assurance && (!montant || montant === 0)) {
+          return `${record.assurance.prix} DA`;
+        }
+        return `${montant} DA`;
+      },
+      sorter: (a, b) => {
+        const montantA = a.assurance && (!a.montant || a.montant === 0) ? a.assurance.prix : a.montant;
+        const montantB = b.assurance && (!b.montant || b.montant === 0) ? b.assurance.prix : b.montant;
+        return montantA - montantB;
+      }
     },
     {
       title: "Statut",
@@ -170,6 +190,15 @@ export default function ListePaiementsPage() {
       title: "Méthode",
       dataIndex: "methode_paiement",
       key: "methode_paiement"
+    },
+    {
+      title: "Type",
+      key: "type",
+      render: (_, record) => {
+        if (record.reservation) return "Réservation";
+        if (record.assurance) return "Assurance";
+        return "N/A";
+      }
     },
     {
       title: "Utilisateur",
@@ -295,7 +324,11 @@ export default function ListePaiementsPage() {
             <Descriptions.Item label="Date">
               {dayjs(currentPaiement.createdAt).format("DD/MM/YYYY HH:mm")}
             </Descriptions.Item>
-            <Descriptions.Item label="Montant">{currentPaiement.montant} DA</Descriptions.Item>
+            <Descriptions.Item label="Montant">
+              {currentPaiement.assurance && (!currentPaiement.montant || currentPaiement.montant === 0) 
+                ? `${currentPaiement.assurance.prix} DA` 
+                : `${currentPaiement.montant} DA`}
+            </Descriptions.Item>
             <Descriptions.Item label="Statut">
               <Tag color={statusColors[normalizeStatus(currentPaiement.statut)] || "default"}>
                 {statusDisplay[normalizeStatus(currentPaiement.statut)] || currentPaiement.statut?.toUpperCase()}
@@ -304,10 +337,18 @@ export default function ListePaiementsPage() {
             <Descriptions.Item label="Méthode">{currentPaiement.methode_paiement}</Descriptions.Item>
             <Descriptions.Item label="Devise">{currentPaiement.devise || "DZD"}</Descriptions.Item>
             
+            {currentPaiement.assurance && (
+              <Descriptions.Item label="Type d'assurance">
+                {currentPaiement.assurance.type}
+              </Descriptions.Item>
+            )}
+            
             <Descriptions.Item label="Utilisateur" span={2}>
               {getUserInfo(currentPaiement) ? (
                 <>
-                  <strong>ID:</strong> {currentPaiement.reservation?.id_utilisateur_inscrit || 'N/A'}<br />
+                  <strong>ID:</strong> {currentPaiement.reservation?.id_utilisateur_inscrit || 
+                                        currentPaiement.assurance?.id_utilisateur_inscrit || 
+                                        'N/A'}<br />
                   <strong>Nom:</strong> {getUserInfo(currentPaiement).nom || 'N/A'}<br />
                   <strong>Prénom:</strong> {getUserInfo(currentPaiement).prenom || 'N/A'}<br />
                   <strong>Email:</strong> {getUserInfo(currentPaiement).email || 'N/A'}<br />

@@ -1,10 +1,36 @@
 // controllers/assuranceController.js
 const assuranceService = require('../services/assurance.service');
+const { Assurance, Utilisateur_inscrit,Utilisateur } = require('../models'); // import des modèles
 
 const getAll = async (req, res) => {
-  const assurances = await assuranceService.getAllAssurances();
-  res.json(assurances);
+  try {
+    const assurances = await Assurance.findAll({
+      include: [
+        {
+          model: Utilisateur_inscrit,
+          as: 'utilisateur_inscrit', // alias correct
+          required: false,
+          include: [
+            {
+              model: Utilisateur,
+              as: 'utilisateur', // alias correct
+              required: false,
+              attributes: ['id', 'nom', 'prenom', 'email', 'telephone']
+            }
+          ]
+        }
+      ]
+    });
+    console.log(JSON.stringify(assurances, null, 2));
+res.status(200).json(assurances);
+
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
 };
+
+
 
 const getById = async (req, res) => {
   const id = req.params.id;

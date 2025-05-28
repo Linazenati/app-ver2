@@ -90,9 +90,13 @@ const ChoixPaiement = () => {
                 console.error('Erreur Axios :', error.response?.data || error.message);
                 alert("Une erreur est survenue lors de la création du lien de paiement.");
             }
-        } else if (formData.methodePaiement === "international") {
-            try {
-                const response = await stripeService.initiatePayment(idAssurance, token); // 🔥 Utilisation de idAssurance ici aussi
+        }  else if (formData.methodePaiement === "international") {
+    try {
+        const paymentData = {
+    assuranceId: idAssurance,
+    reservationId: null // explicitement null si non utilisé
+};
+        const response = await stripeService.initiatePayment(paymentData, token); // 🔥 Utilisation de idAssurance ici aussi
                 const paymentLink = response.data.lien_paiement;
 
                 if (paymentLink) {

@@ -19,6 +19,7 @@ import Liste_publication from "./list_publication";
 import Liste_reservation from "./liste-reservation";
 import Liste_paiement from "./liste-paiement";
 import List_voyages from "./list-voyages";
+import Liste_assurance from "./liste-assurance";
 
 const Index = () => {
   return (
@@ -37,6 +38,9 @@ const Index = () => {
           <Route path="/liste-reservation" element={<Liste_reservation />} />
           <Route path="/liste-paiement" element={<Liste_paiement />} />
           <Route path="/liste-voyages" element={<List_voyages />} />
+                    <Route path="/liste-assurance" element={<Liste_assurance />} />
+
+
         </Routes>
       </div>
 

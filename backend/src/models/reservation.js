@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'id_hotel',
         as: 'hotel',
       });
+      
       Reservation.hasOne(models.Paiement, {
         foreignKey: 'id_reservation',
         as: 'reservation',
