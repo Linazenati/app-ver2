@@ -11,7 +11,8 @@ const {
   Omra,
   Vol,
   Hotel,
-  Assurance
+  Assurance,
+  Client
 } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
@@ -79,22 +80,33 @@ exports.handleStripeWebhook = async (req, res) => {
           prenom = utilisateur?.prenom || '';
           email = utilisateur?.email || '';
           telephone = utilisateur?.telephone || '';
-          
+          if (utilisateur?.id) {
+            const existingClient = await Client.findByPk(utilisateur.id);
+
+            if (!existingClient) {
+              await Client.create({
+                id: utilisateur.id,
+                adresse: utilisateur.adresse || 'Adresse non renseignée', // Tu peux éventuellement enrichir cela plus tard
+              });
+              console.log(`Utilisateur avec ID ${utilisateur.id} ajouté en tant que client.`);
+            }
+          }
+
           destination = `Type d'assurance : ${assurance.type}\n` +
             `Date début : ${new Date(assurance.dateDebut).toLocaleDateString()}\n` +
             `Date fin : ${new Date(assurance.dateFin).toLocaleDateString()}\n` +
             `Nombre de voyageurs : ${assurance.nombreVoyageurs}\n` +
             `Description : ${assurance.description || 'N/A'}`;
-          
+
           shouldGenerateInvoice = true;
         }
-      } 
+      }
       // Cas 2: Paiement pour une réservation
       else if (paiement.id_reservation) {
         const reservation = await Reservation.findByPk(paiement.id_reservation, {
           include: [
-            { 
-              model: Utilisateur_inscrit, 
+            {
+              model: Utilisateur_inscrit,
               as: 'utilisateur_inscrit',
               include: [{
                 model: Utilisateur,
@@ -106,14 +118,14 @@ exports.handleStripeWebhook = async (req, res) => {
               model: Publication,
               as: 'publication',
               include: [
-                { 
-                  model: Voyage, 
-                  as: 'voyage', 
+                {
+                  model: Voyage,
+                  as: 'voyage',
                   attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'programme']
                 },
-                { 
-                  model: Omra, 
-                  as: 'omra', 
+                {
+                  model: Omra,
+                  as: 'omra',
                   attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'duree', 'status']
                 }
               ]
@@ -140,24 +152,35 @@ exports.handleStripeWebhook = async (req, res) => {
           prenom = utilisateur?.prenom || '';
           email = utilisateur?.email || '';
           telephone = utilisateur?.telephone || '';
+          if (utilisateur?.id) {
+            const existingClient = await Client.findByPk(utilisateur.id);
+
+            if (!existingClient) {
+              await Client.create({
+                id: utilisateur.id,
+                adresse: utilisateur.adresse || 'Adresse non renseignée', // Tu peux éventuellement enrichir cela plus tard
+              });
+              console.log(`Utilisateur avec ID ${utilisateur.id} ajouté en tant que client.`);
+            }
+          }
 
           // Détermination de la destination
           if (reservation.publication?.voyage) {
             const voyage = reservation.publication.voyage;
             const dateDepart = voyage.date_de_depart ? new Date(voyage.date_de_depart).toLocaleDateString() : 'Date inconnue';
             const dateRetour = voyage.date_de_retour ? new Date(voyage.date_de_retour).toLocaleDateString() : 'Date inconnue';
-            
+
             destination = `Voyage : ${voyage.titre}\n` +
               `Prix : ${voyage.prix} DZD\n` +
               `Départ : ${dateDepart}\n` +
               `Retour : ${dateRetour}\n` +
               `Description : ${voyage.description || 'Non disponible'}`;
-            
+
           } else if (reservation.publication?.omra) {
             const omra = reservation.publication.omra;
             const dateDepart = omra.date_de_depart ? new Date(omra.date_de_depart).toLocaleDateString() : 'Date inconnue';
             const dateRetour = omra.date_de_retour ? new Date(omra.date_de_retour).toLocaleDateString() : 'Date inconnue';
-            
+
             destination = `Omra : ${omra.titre}\n` +
               `Prix : ${omra.prix} DZD\n` +
               `Durée : ${omra.duree} jours\n` +
@@ -168,7 +191,7 @@ exports.handleStripeWebhook = async (req, res) => {
             const vol = reservation.vol;
             const dateDepart = vol.date_depart ? new Date(vol.date_depart).toLocaleDateString() : 'Date inconnue';
             const dateArrivee = vol.date_arrivee ? new Date(vol.date_arrivee).toLocaleDateString() : 'Date inconnue';
-            
+
             destination = `Vol ${vol.numero_vol} (${vol.compagnie_aerienne})\n` +
               `De ${vol.aeroport_depart} à ${vol.aeroport_arrivee}\n` +
               `Départ: ${dateDepart}\n` +
@@ -180,7 +203,7 @@ exports.handleStripeWebhook = async (req, res) => {
               `Adresse : ${hotel.adresse || 'Non spécifiée'}\n` +
               `Classement : ${'★'.repeat(hotel.etoiles || 0)}`;
           }
-          
+
           shouldGenerateInvoice = true;
         }
       }

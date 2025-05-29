@@ -281,7 +281,7 @@ export default function ListeAssurancesPage() {
                         marginBottom: 10
                     }}
                 >
-                    <h2 style={{ margin: 0 }}>Liste des Assurances</h2>
+                    <h2 style={{ margin: 0 }}>Liste des contrats d'assurances</h2>
                     <Space>
                         <Input
                             placeholder="Rechercher..."

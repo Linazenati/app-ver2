@@ -20,6 +20,7 @@ import Liste_reservation from "./liste-reservation";
 import Liste_paiement from "./liste-paiement";
 import List_voyages from "./list-voyages";
 import Liste_assurance from "./liste-assurance";
+import Config_api from "./config-api"
 
 const Index = () => {
   return (
@@ -39,6 +40,7 @@ const Index = () => {
           <Route path="/liste-paiement" element={<Liste_paiement />} />
           <Route path="/liste-voyages" element={<List_voyages />} />
                     <Route path="/liste-assurance" element={<Liste_assurance />} />
+                    <Route path="/configuration-api" element={<Config_api />} />
 
 
         </Routes>
