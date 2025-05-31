@@ -1,6 +1,6 @@
 import React from "react";
 
-const CarousselItem = ({ nom, img, title, content, active }) => {
+const CarousselItem = ({ nom, img, title, content, active, lien }) => {
   return (
     <div className={`carousel-item ${active ? "active" : ""}`}>
       {/* Image avec overlay */}
@@ -64,22 +64,23 @@ const CarousselItem = ({ nom, img, title, content, active }) => {
               {content}
             </h1>
             <a
-              href="#"
+              href={lien || "#"}
               className="btn btn-warning py-md-3 px-md-5 mt-4"
               style={{
                 position: "relative",
                 top: "130px",
                 left: "17%",
                 transform: "translateX(-50%)",
-                textTransform: "uppercase", // Le bouton aura des lettres majuscules
+                textTransform: "uppercase",
                 fontWeight: "600",
-                borderRadius: "25px", // Bordures arrondies pour un bouton plus moderne
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)", // Ombre du bouton
-                transition: "background-color 0.3s ease, box-shadow 0.3s ease",  // Transition au survol
+                borderRadius: "25px",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+                transition: "background-color 0.3s ease, box-shadow 0.3s ease",
               }}
             >
               Réserver maintenant
             </a>
+
           </div>
         </div>
       </div>

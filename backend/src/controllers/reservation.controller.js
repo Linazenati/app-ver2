@@ -14,16 +14,18 @@ exports.createReservation = async (req, res) => {
   try {
     // Extraction des données
     const bodyData = req.body;
-    console.log(req.body)
     const files = req.files;
-
-
 
     // Vérification des fichiers
     const piece_identite = files?.['piece_identite']?.[0]?.filename || null;
     const passeport = files?.['passeport']?.[0]?.filename || null;
 
     console.log("📄 Fichiers après traitement:", { piece_identite, passeport });
+
+    // Construction des URLs complètes
+    const baseUrl = `${req.protocol}://${req.get('host')}/images/`;
+    const piece_identiteUrl = piece_identite ? baseUrl + piece_identite : null;
+    const passeportUrl = passeport ? baseUrl + passeport : null;
 
     // Vérification des champs obligatoires
    if (!bodyData.id_utilisateur || bodyData.nombre_adultes == null || 
@@ -92,8 +94,8 @@ if (bodyData.id_hotel && !hotel) {
       type_chambre: bodyData.type_chambre || null,
       ville_residence: bodyData.ville_residence,
       nationalite: bodyData.nationalite,
-      piece_identite,
-      passeport
+      piece_identite: piece_identiteUrl, // Stockez maintenant l'URL complète
+      passeport: passeportUrl // Stockez maintenant l'URL complète
     });
 
     console.log("✅ Réservation créée avec succès:", reservation.toJSON());
@@ -104,8 +106,8 @@ if (bodyData.id_hotel && !hotel) {
       data: {
         id: reservation.id,
         documents: {
-          piece_identite: !!piece_identite,
-          passeport: !!passeport
+          piece_identite: piece_identiteUrl, // Renvoyez l'URL complète
+          passeport: passeportUrl
         }
       }
     });

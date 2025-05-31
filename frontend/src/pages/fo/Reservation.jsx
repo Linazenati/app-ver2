@@ -283,14 +283,13 @@ const BookingPage = () => {
             });
 
             formDataToSend.append('piece_identite', formData.piece_identite);
-            if (formData.passeport) {
-                formDataToSend.append('passeport', formData.passeport);
-            }
+        if (formData.passeport) {
+            formDataToSend.append('passeport', formData.passeport);
+        }
 
             const config = {
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data'
                 }
             };
 

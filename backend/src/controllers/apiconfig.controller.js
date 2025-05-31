@@ -16,6 +16,7 @@ exports.getAllConfigs = async (req, res) => {
 };
 
 
+
 exports.getConfigById = async (req, res) => {
   try {
     const config = await apiConfigService.getById(req.params.id);
