@@ -28,6 +28,10 @@ const Infos_Voyage = () => {
     const fetchVoyage = async () => {
       try {
         console.log("ID voyage reçu :", id);
+        const response = await voyageService.getDetailsVoyages(id);
+        console.log("Réponse backend :", response);
+      const { voyage, commentairesSocial } = response.data;
+
         
         // Récupérer les données du voyage et les publications en parallèle
         const [voyageResponse, publicationsResponse] = await Promise.all([
@@ -35,7 +39,6 @@ const Infos_Voyage = () => {
           publicationService.getPublicationsByVoyageId(id) // Récupération des publications
         ]);
 
-        const { voyage, commentairesSocial } = voyageResponse.data;
         const publications = publicationsResponse.data;
 
         // Traitement des données comme avant...

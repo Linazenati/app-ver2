@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import "../../assets/css/inscription.css";
-import authAPI from "../../services-call/auth";
-
-import toast, { Toaster } from 'react-hot-toast';
+import { Form, Input, Button, message } from 'antd';
+import authAPI from '../../services-call/auth';
+import toast, { Toaster } from "react-hot-toast";
 
 const Inscription = () => {
   const navigate = useNavigate();
@@ -15,96 +14,89 @@ const Inscription = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    adresse:'',
-    role: 'Utilisateur_inscrit'
+    adresse: '',
+    role: 'Utilisateur_inscrit',
   });
 
- 
-
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Les mots de passe ne correspondent pas");
+      message.error("Les mots de passe ne correspondent pas");
       return;
     }
 
-    
-      // Enregistrement
+    try {
       const registerResponse = await authAPI.register({
         nom: formData.nom,
         prenom: formData.prenom,
         email: formData.email,
         password: formData.password,
         telephone: parseInt(formData.telephone),
-        adresse:formData.adresse,
-        role: formData.role
+        adresse: formData.adresse,
+        role: formData.role,
       });
 
       console.log("Register Response:", registerResponse);
-      // alert("Inscription réussie ! Connexion en cours...");
-      
-      toast.success('Inscription réussie ! Connexion en cours...');
+      toast.success("Inscription réussie ! Connexion en cours...");
 
-      // Redirection après 2 secondes
       setTimeout(() => {
-        navigate("/web/Connexion"); // ou "/login" si tu préfères
+        navigate("/web/Connexion");
       }, 2000);
-
-   
+    } catch (error) {
+      console.error(error);
+       toast.error("Une erreur est survenue lors de l'inscription.");
+    }
   };
 
   return (
-    <div className="form-container">
-      <h2>Créer un Compte</h2>
+    <>
+      <Toaster position="top-right" reverseOrder={false} />
+    <div style={{ maxWidth: 500, margin: 'auto', paddingTop: '40px' }}>
+      <h2 style={{ textAlign: 'center' ,  color: '#05396d'}}>Créer un Compte</h2>
+      <Form layout="vertical" onFinish={handleSubmit}>
+        <Form.Item label="Nom" required>
+          <Input name="nom" value={formData.nom} onChange={handleChange} />
+        </Form.Item>
 
-      <form onSubmit={handleSubmit} className="form">
-        <div className="form-group">
-          <label htmlFor="nom">Nom</label>
-          <input type="text" id="nom" name="nom" value={formData.nom} onChange={handleChange} required />
-        </div>
+        <Form.Item label="Prénom" required>
+          <Input name="prenom" value={formData.prenom} onChange={handleChange} />
+        </Form.Item>
 
-        <div className="form-group">
-          <label htmlFor="prenom">Prénom</label>
-          <input type="text" id="prenom" name="prenom" value={formData.prenom} onChange={handleChange} required />
-        </div>
+        <Form.Item label="Téléphone" required>
+          <Input name="telephone" type="tel" value={formData.telephone} onChange={handleChange} />
+        </Form.Item>
 
-        <div className="form-group">
-          <label htmlFor="telephone">Téléphone</label>
-          <input type="tel" id="telephone" name="telephone" value={formData.telephone} onChange={handleChange} required />
-        </div>
+        <Form.Item label="Email" required>
+          <Input name="email" type="email" value={formData.email} onChange={handleChange} />
+        </Form.Item>
 
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
-        </div>
+        <Form.Item label="Mot de passe" required>
+          <Input.Password name="password" value={formData.password} onChange={handleChange} />
+        </Form.Item>
 
-        <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
-          <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} required />
-        </div>
+        <Form.Item label="Confirmer le mot de passe" required>
+          <Input.Password name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} />
+        </Form.Item>
 
-        <div className="form-group">
-          <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
-        </div>
-         <div className="form-group">
-          <label htmlFor="dresse">Adresse</label>
-          <input type="adresse" id="adresse" name="adresse" value={formData.adresse} onChange={handleChange} required />
-        </div>
+        <Form.Item label="Adresse" required>
+          <Input name="adresse" value={formData.adresse} onChange={handleChange} />
+        </Form.Item>
 
-        <button type="submit" className="submit-btn">S'inscrire</button>
-      </form>
-
-      <Toaster />
-    </div>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block>
+            S'inscrire
+          </Button>
+        </Form.Item>
+      </Form>
+      </div>
+      </>
   );
 };
 

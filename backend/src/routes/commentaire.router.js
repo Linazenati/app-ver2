@@ -11,4 +11,19 @@ router.put('/selection', commentaireController.updateSelectionCommentaire);
 // Route pour récupérer les commentaires sélectionnés selon la plateforme
 router.get('/partager', commentaireController.getCommentairesSelectionnes);
 
+
+
+// Route pour récupérer les commentaires sélectionnés selon la plateforme
+router.get('/facebook/:id_publication', commentaireController.getCommentairesFacebook);
+
+
+// Route pour récupérer les commentaires sélectionnés selon la plateforme
+router.get('/instagram/:id_publication', commentaireController.getCommentairesInstagram);
+
+
+
+//recuperer  les noveau commentaires 
+router.get('/nouveaux/:id_publication', commentaireController.getNouveauxCommentaires);
+
+
 module.exports = router;

@@ -12,29 +12,33 @@ const { Op } = require('sequelize');
  */
 async function sauvegarderCommentaires(id_publication, commentaires, source = 'instagram') {
   try {
-    for (const commentaire of commentaires) {
-      const isInstagram = source === 'instagram';
+    const isInstagram = source === 'instagram';
 
-      // Vérifie si le commentaire existe déjà pour éviter les doublons
+    for (const commentaire of commentaires) {
+      const commentaireId = commentaire.id;
+
+      // Vérifier si le commentaire existe déjà dans la base
       const exist = await Commentaire.findOne({
         where: isInstagram
-          ? { id_commentaire_instagram: commentaire.id, id_publication }
-          : { id_commentaire_facebook: commentaire.id, id_publication },
+          ? { id_commentaire_instagram: commentaireId, id_publication }
+          : { id_commentaire_facebook: commentaireId, id_publication },
       });
 
       if (!exist) {
-        // Prépare les données pour la création
         const data = {
           id_publication,
           contenu: isInstagram ? commentaire.text : commentaire.message,
           date_commentaire: new Date(isInstagram ? commentaire.timestamp : commentaire.created_time),
-          id_commentaire_instagram: isInstagram ? commentaire.id : null,
-          id_commentaire_facebook: !isInstagram ? commentaire.id : null,
+          id_commentaire_instagram: isInstagram ? commentaireId : null,
+          id_commentaire_facebook: !isInstagram ? commentaireId : null,
+          auteur: commentaire.username || commentaire.from?.name || 'Inconnu',
+          est_nouveau: true, // ✅ Marqué comme nouveau
         };
 
-        // Création du commentaire
         await Commentaire.create(data);
-        console.log(`💾 Commentaire ${source} sauvegardé : ${data.contenu}`);
+        console.log(`🆕 Nouveau commentaire ${source} sauvegardé : "${data.contenu}"`);
+      } else {
+        console.log(`↩️ Commentaire ${source} déjà existant ignoré : ${commentaireId}`);
       }
     }
   } catch (error) {
@@ -46,9 +50,24 @@ async function sauvegarderCommentaires(id_publication, commentaires, source = 'i
 async function supprimerCommentaireEnBase(commentId, publicationId, source = 'instagram') {
   try {
     const whereClause = source === 'instagram'
-      ? { id_commentaire_instagram: commentId, id_publication: publicationId }
-      : { id_commentaire_facebook: commentId, id_publication: publicationId };
+      ? { id_commentaire_instagram: commentId }
+      : { id_commentaire_facebook: commentId };
 
+    // Si tu veux absolument filtrer par publicationId aussi :
+    if (publicationId) {
+      whereClause.id_publication = publicationId;
+    }
+
+    console.log('Tentative de suppression avec :', whereClause);
+
+    // Vérifier d'abord si le commentaire existe
+    const commentaire = await Commentaire.findOne({ where: whereClause });
+    if (!commentaire) {
+      console.warn(`⚠️ Aucun commentaire ${source} trouvé avec cet ID et publicationId en base de données.`);
+      return;
+    }
+
+    // Suppression
     const result = await Commentaire.destroy({
       where: whereClause,
     });
@@ -56,13 +75,14 @@ async function supprimerCommentaireEnBase(commentId, publicationId, source = 'in
     if (result) {
       console.log(`✅ Commentaire ${source} supprimé en base de données.`);
     } else {
-      console.warn(`⚠️ Aucun commentaire ${source} trouvé avec cet ID en base de données.`);
+      console.warn(`⚠️ Échec suppression commentaire ${source} (inattendu).`);
     }
   } catch (error) {
     console.error(`❌ Erreur lors de la suppression du commentaire ${source} en base de données :`, error.message);
     throw new Error(`Erreur lors de la suppression du commentaire ${source} en base de données`);
   }
 }
+
 
 const mettreAJourSelection = async (id_commentaire_plateforme, plateforme, est_selectionne) => {
   let whereCondition = {};
@@ -85,6 +105,8 @@ const mettreAJourSelection = async (id_commentaire_plateforme, plateforme, est_s
 
   return commentaire;
 };
+
+
 async function recupererSelectionnesParPlateforme(voyageId, plateformes) {
   // Récupérer les publications du voyage pour les plateformes demandées
   const publications = await Publication.findAll({
@@ -108,9 +130,72 @@ async function recupererSelectionnesParPlateforme(voyageId, plateformes) {
   return commentaires;
 }
 
+async function getCommentairesInstagramParVoyage(id_publication) {
+  const commentaires = await Commentaire.findAll({
+    where: {
+      id_publication,
+      id_commentaire_instagram: { [Op.ne]: null } // filtre seulement ceux d'Instagram
+    }
+  });
+  // Met à jour est_nouveau à false pour ceux qui sont encore marqués comme nouveaux
+  await Commentaire.update(
+    { est_nouveau: false },
+    {
+      where: {
+        id_publication,
+        id_commentaire_instagram: { [Op.ne]: null },
+        est_nouveau: true
+      }
+    }
+  );
+
+  return commentaires;
+}
+
+async function getCommentairesFacebookParVoyage(id_publication) {
+  const commentaires = await Commentaire.findAll({
+    where: {
+      id_publication,
+      id_commentaire_facebook: { [Op.ne]: null } // filtre seulement ceux de Facebook
+    }
+  });
+  await Commentaire.update(
+    { est_nouveau: false },
+    {
+      where: {
+        id_publication,
+        id_commentaire_facebook: { [Op.ne]: null },
+        est_nouveau: true
+      }
+    }
+  );
+   return commentaires;
+}
+
+
+const getNouveauxCommentaires = async (id_publication) => {
+  try {
+    const commentaires = await Commentaire.findAll({
+      where: {
+        id_publication: id_publication,
+        est_nouveau: true
+      },
+      order: [['date_commentaire', 'DESC']]
+    });
+
+    return commentaires;
+  } catch (error) {
+    console.error("❌ Erreur dans le service - récupération nouveaux commentaires :", error);
+    throw error;
+  }
+};
+
 module.exports = {
   sauvegarderCommentaires,
   supprimerCommentaireEnBase,
     mettreAJourSelection,
   recupererSelectionnesParPlateforme,
+  getCommentairesInstagramParVoyage,
+  getCommentairesFacebookParVoyage,
+  getNouveauxCommentaires
 };

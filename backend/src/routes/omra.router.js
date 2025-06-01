@@ -3,6 +3,9 @@ const router = express.Router();
 const omraController = require("../controllers/omra.controller");
 const upload = require('../middlewares/upload.middleware'); // 👈 Assure-toi que le middleware fonctionne bien
 const multer = require('multer');
+const authenticateToken = require('../middlewares/authMiddleware'); // ← import du middleware
+
+
 // 📥 Créer une nouvelle Omra
 router.post("/", upload.single('image'), omraController.create);
 
@@ -18,7 +21,17 @@ router.put("/:id", omraController.update);
 // 🗑️ Supprimer une Omra par ID
 router.delete("/:id", omraController.deletee);
 
-// ✅ Publier une Omra sur le site
-router.post("/:id/publish", omraController.publishToSite);
+
+// ✏️ publier une omra dans le site par ID
+router.post("/:id/publish", omraController.publierSurSiteSeule);
+
+// 🔍 Récupérer les omras publier sur site
+router.get('/publies/site', omraController.getOmraPubliesSurSite);
+
+
+// 🔍 Récupérer les omras publier sur site avec commentaire des rsx
+router.get('/publies/siteCommentaire/:id', omraController.getDetailsOmra);
+
+
 
 module.exports = router;

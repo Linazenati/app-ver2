@@ -40,6 +40,7 @@ require("./routes")(app);
 
 // Port
 const PORT = process.env.PORT || 3000;
+//require("./scripts/updaterLikes")
 app.listen(PORT, () => {
   console.log(`===========================================`);
   console.log(`Serveur démarré sur http://localhost:${PORT}`);

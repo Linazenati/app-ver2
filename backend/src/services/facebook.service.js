@@ -7,8 +7,20 @@ const path = require('path');
 const { PAGE_ACCESS_TOKEN, PAGE_ID, GRAPH_API_VERSION } = require('../config/facebook.config');
 const { sauvegarderCommentaires , supprimerCommentaireEnBase } = require('./commentaire.service');
 const { Publication , Commentaire } = require('../models');
+const { peutPublier, incrementerPublication,getEtatQuota } = require('./throttle.service');
+const quotaService = require('../services/recuperationQuota.service');
 
-const publishToFacebook = async (voyage, message, localImagePaths) => {
+
+const publishToFacebook = async (message, localImagePaths) => {
+  const quota =  await getEtatQuota();
+    console.log("📊 État actuel du quota publication :", quota);
+
+  // 🔐 Vérifie le quota avant de publier
+  if (!peutPublier()) {
+    console.log("🚫 Trop de publications Facebook. Réessaye plus tard.");
+    throw new Error("Limite de publications atteinte.");
+  }
+
   try {
     const mediaFbIds = [];
 
@@ -22,7 +34,7 @@ const publishToFacebook = async (voyage, message, localImagePaths) => {
       const response = await axios.post(
         `https://graph.facebook.com/${GRAPH_API_VERSION}/${PAGE_ID}/photos`,
         form,
-        { headers: form.getHeaders() , timeout: 300000 }
+        { headers: form.getHeaders() , timeout: 600000 }
       );
 
       // ✅ On récupère l'id de l'image pour l'associer plus tard à la publication principale
@@ -41,16 +53,28 @@ const publishToFacebook = async (voyage, message, localImagePaths) => {
       }
 
     );
+// ✅ Publication réussie
+    await incrementerPublication(); // ➕ Mise à jour du quota après succès
+      console.log("🔁 Incrémentation publication appelée");
+  console.log("✅ Publication Facebook réussie et quota mis à jour !");
 
 
     // ✅ La publication a été créée avec succès
     return { post_id: postResponse.data.id };
+
  } catch (error) {
-  console.error("❌ Erreur lors de la publication sur Facebook :", error.response?.data || error.message);
+  const errorData = error.response?.data || error.message;
+  console.error("❌ Erreur lors de la publication sur Facebook :", errorData);
+
+  // 🔍 Gestion spécifique pour les erreurs réseau ou quota
   if (error.code === 'ETIMEDOUT') {
-    console.error("⚠️ La connexion au serveur Facebook a expiré. Vérifiez votre connexion Internet.");
+    console.error("⏱️ Temps d'attente dépassé (timeout) lors de la requête Facebook.");
+  } else if (error.response?.status === 429) {
+    console.error("🚫 Erreur de quota : trop de requêtes envoyées.");
   }
-  throw new Error("Publication Facebook échouée");
+
+  // Tu peux aussi propager l'erreur à un appelant si nécessaire :
+  throw new Error("Échec de la publication Facebook : " + errorData?.error?.message || error.message);
 }
 };
 
@@ -70,6 +94,24 @@ const getPublications = async () => {
 // 📝 Récupérer les commentaires d'une publication
 const recupererCommentaires = async (id_post_facebook) => {
   try {
+    // Vérifier et afficher état du quota (optionnel, pour debug)
+    const etatQuota = await quotaService.getEtatRecupQuota();
+    console.log("📊 État actuel des quotas :", etatQuota);
+
+    // Vérifier si on peut récupérer (via quota)
+    if (
+      etatQuota.recupMinuteRestante <= 0 ||
+      etatQuota.recupHeureRestante <= 0 ||
+      etatQuota.recupJourRestante <= 0
+    ) {
+      console.warn("🚫 Quota de récupération atteint.");
+      return []; // ou throw une erreur custom
+    }
+
+    // Incrémenter le quota car on lance une récupération
+    await quotaService.incrementerQuota();
+   
+
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${id_post_facebook}/comments`;
     const response = await axios.get(url, {
       params: {
@@ -92,7 +134,7 @@ const recupererCommentaires = async (id_post_facebook) => {
 
     await sauvegarderCommentaires(publication.id, commentaires, 'facebook');
     console.log('✅ Commentaires sauvegardés avec succès.');
-
+  
     return commentaires;
   } catch (error) {
     console.error('Erreur lors de la récupération des commentaires Facebook:', error.response?.data || error.message);
@@ -102,7 +144,7 @@ const recupererCommentaires = async (id_post_facebook) => {
 };
 
 // 📝 Récupérer les Likes d'une publication
-const recupererLikes = async (id_post_facebook) => {
+const recupererLikesFacebook = async (id_post_facebook) => {
  try {
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${id_post_facebook}?fields=reactions.summary(true)`;
     const response = await axios.get(url, {
@@ -114,7 +156,7 @@ const recupererLikes = async (id_post_facebook) => {
     });
 
     const nombreLikes = response.data.reactions?.summary?.total_count || 0;
-    console.log('✅ Nombre de Likes :', nombreLikes);
+    console.log('✅ Nombre de Likes facebook:', nombreLikes);
 
     return nombreLikes;
   } catch (error) {
@@ -125,35 +167,49 @@ const recupererLikes = async (id_post_facebook) => {
 
 
 
+
 // 📝 Supprimer un commentaire
-const supprimerCommentaire = async (commentId) => {
-  try {
-    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${commentId}`;
-    console.log('📡 Suppression en cours...');
+const supprimerCommentaire = async (id_commentaire_facebook) => {
+   try {
+    const etatSuppQuota = await quotaService.getEtatSuppQuota();
+
+  if (
+    etatSuppQuota.suppMinuteRestante <= 0 ||
+    etatSuppQuota.suppHeureRestante <= 0 ||
+    etatSuppQuota.suppJourRestante <= 0
+  ) {
+    throw new Error('Quota de suppression dépassé');
+  }
+
+  await quotaService.incrementerSuppQuota();
+    const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${id_commentaire_facebook}`;
+    console.log('📡 Suppression Facebook en cours...');
     console.log('🔗 URL appelée :', url);
 
     const response = await axios.delete(url, {
-      params: {
-        access_token: PAGE_ACCESS_TOKEN,
+      headers: {
+        Authorization: `Bearer ${PAGE_ACCESS_TOKEN}`,
       },
-                  timeout: 20000, // ⏰ 10 secondes (ajoute cette ligne)
-
+      timeout: 20000,
     });
-     console.log('✅ Réponse Facebook (suppression réussie) :', response.data);
-// 🔍 Récupérer le commentaire pour obtenir l'ID de la publication associée
-const commentaire = await Commentaire.findOne({
-  where: { id_commentaire_facebook: commentId },
-});
 
-if (!commentaire) {
-  console.warn("⚠️ Aucun commentaire trouvé pour cet ID en base de données.");
-  return response.data;
-}
+    console.log('✅ Réponse Facebook :', response.data);
 
-// Suppression en base de données
-await supprimerCommentaireEnBase(commentId, commentaire.id_publication, 'facebook');
-console.log('✅ Commentaire supprimé en base de données.');
+    // Recherche en base
+    const commentaire = await Commentaire.findOne({
+      where: { id_commentaire_facebook },
+    });
+
+    if (!commentaire) {
+      console.warn("⚠️ Aucun commentaire trouvé en base.");
+      return response.data;
+    }
+
+    // Suppression en base
+    await supprimerCommentaireEnBase(id_commentaire_facebook, commentaire.id_publication, 'facebook');
+    console.log('✅ Commentaire supprimé en base.');
     return response.data;
+
   } catch (error) {
     console.error('❌ Erreur lors de la suppression du commentaire :');
     if (error.response) {
@@ -203,7 +259,7 @@ const verifierPublicationFacebook = async (postId) => {
 module.exports = {
   publishToFacebook,
   getPublications,
-  recupererLikes,
+  recupererLikesFacebook,
   recupererCommentaires,
   supprimerCommentaire,
   masquerCommentaire,

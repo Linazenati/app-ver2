@@ -66,8 +66,15 @@ module.exports = (sequelize, DataTypes) => {
     url_post: {
       type: DataTypes.STRING,
       allowNull: true
-    }
-
+    } , 
+    nbr_likes: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    date_maj_likes: {
+      type: DataTypes.DATE,
+       allowNull: true,
+  },
   }, {
     sequelize,
     modelName: 'Publication',

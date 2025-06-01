@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaCalendarAlt, FaPlaneDeparture, FaMoneyBillWave, FaFacebookF, FaInstagram } from 'react-icons/fa';
+import { FaCalendarAlt, FaPlaneDeparture, FaMoneyBillWave, FaFacebookF, FaInstagram ,   FaHeart} from 'react-icons/fa';
 
 const Card = styled(motion.div)`
   background: #fff;
@@ -138,7 +138,8 @@ const Button = styled.button`
 
   
 
-const VoyageCard = ({ voyage, commentairesFacebook = [], commentairesInstagram = [], urlPostFacebook = null, urlPostInstagram = null }) => {
+const VoyageCard = ({ voyage, commentairesFacebook = [], commentairesInstagram = [], urlPostFacebook = null, urlPostInstagram = null ,  likesFacebook = 0,
+  likesInstagram = 0, }) => {
   if (!voyage) return <div>Chargement...</div>
 
 
@@ -163,6 +164,27 @@ const VoyageCard = ({ voyage, commentairesFacebook = [], commentairesInstagram =
           <InfoRow><FaPlaneDeparture /> Départ : {new Date(voyage.date_de_depart).toLocaleDateString()}</InfoRow>
           <InfoRow><FaCalendarAlt /> Retour : {new Date(voyage.date_de_retour).toLocaleDateString()}</InfoRow>
           <Price><FaMoneyBillWave /> {voyage.prix} DZD</Price>
+
+          
+               {/* Section Likes */}
+      <div className="d-flex gap-3 mt-2 align-items-center" style={{ fontSize: '14px', color: '#555' }}>
+        {likesFacebook != null && (
+          <div className="d-flex align-items-center gap-1" title={`${likesFacebook} J'aime Facebook`}>
+            <FaFacebookF color="#1877F2" />
+            <FaHeart color="#e0245e" />
+            <span>{likesFacebook}</span>
+          </div>
+        )}
+        {likesInstagram !== null && (
+          <div className="d-flex align-items-center gap-1" title={`${likesInstagram} J'aime Instagram`}>
+            <FaInstagram color="#E1306C" />
+            <FaHeart color="#e0245e" />
+            <span>{likesInstagram}</span>
+          </div>
+        )}
+          </div>
+          
+
 {/* Commentaires Facebook */}
     {commentairesFacebook.length > 0 && (
   <CommentsWrapper>

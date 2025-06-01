@@ -1,0 +1,60 @@
+.custom-btn:active {
+    background-color: #ffc107 !important;
+    /* Jaune quand le bouton est actif (cliqué) */
+    border-color: #ffc107 !important;
+    /* Bordure jaune également */
+    color: black !important;
+    /* Texte noir pour contraste */
+}
+
+.stepper-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 30px;
+}
+
+.stepper-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: lightgray;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    position: relative;
+    z-index: 1;
+}
+
+.stepper-line {
+    width: 60px;
+    height: 4px;
+    background-color: lightgray;
+    margin: 0 10px;
+    z-index: 0;
+}
+
+.stepper-circle.current {
+    background-color: #003366;
+}
+
+.stepper-circle.completed {
+    background-color: #28a745;
+}
+
+.stepper-line.completed {
+    background-color: #28a745;
+}
+
+.background-visa {
+    background-image: url('/assets/images/ma-photo.jpg');
+    background-size: cover;
+    /* évite le zoom excessif */
+    background-position: center;
+    /* garde le centrage */
+    background-repeat: no-repeat;
+    /* évite les répétitions */
+}
+

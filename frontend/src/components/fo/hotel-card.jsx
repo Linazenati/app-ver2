@@ -74,11 +74,13 @@ const HotelCard = ({ hotel, onClick }) => {
     name,
     etoiles,
     adresse,
+    region,
     photos,
     Note_moyenne,
     Appréciation,
     Nombre_avis,
     prixDZD,
+    prixEUR
   } = hotel;
 
   return (
@@ -100,15 +102,48 @@ const HotelCard = ({ hotel, onClick }) => {
             {'⭐'.repeat(etoiles)} ({etoiles} étoiles)
           </InfoText>
         )}
-        <InfoText>{adresse}</InfoText>
-        {Note_moyenne && (
+<InfoText>
+  {adresse}
+  {region ? `, ${region}` : ""}
+</InfoText>        {Note_moyenne && (
           <InfoText>
             Note : {Note_moyenne}/10 - {Appréciation || "N/A"}
             <br />
             {Nombre_avis || 0} avis
           </InfoText>
         )}
-        {prixDZD && <Price>Prix : {prixDZD} DZD</Price>}
+       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+  {prixDZD && (
+    <div style={{
+      backgroundColor: '#fff9db',
+      border: '2px solid #ffcc00',
+      borderRadius: '10px',
+      padding: '0.75rem 1rem',
+      fontWeight: 'bold',
+      color: '#333',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      width: 'fit-content'
+    }}>
+      Prix en Dinar : {prixDZD} DZD
+    </div>
+  )}
+  {prixEUR && (
+    <div style={{
+      backgroundColor: '#f0f8ff',
+      border: '2px solid #007fff',
+      borderRadius: '10px',
+      padding: '0.75rem 1rem',
+      fontWeight: 'bold',
+      color: '#333',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      width: 'fit-content'
+    }}>
+      Prix en Euro : {prixEUR} EUR
+    </div>
+  )}
+</div>
+
+
       </CardContent>
     </Card>
   );

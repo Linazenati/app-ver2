@@ -2,11 +2,12 @@
 const fs = require('fs');
 
 const path = require('path');
-const { publishCarouselInstagram ,getPublications,recupererCommentaires,supprimerCommentaire,masquerCommentaire,recupererLikes,verifierPublicationInstagram,getInstagramShortcode} = require('../services/instagram.service');
+const { publishCarouselInstagram ,getPublications,recupererCommentaires,supprimerCommentaire,masquerCommentaire,recupererLikes,verifierPublicationInstagram,getInstagramShortcode,publishSingleImageInstagram } = require('../services/instagram.service');
 const uploadToCloudinary = require('../middlewares/cloudinaryUpload');
-const { Voyage} = require('../models');
+const { Voyage,Omra  , Commentaire} = require('../models');
 const publicationService = require('../services/publication.service');
 const voyageService = require("../services/voyageorganise.service");
+const omraService = require("../services/omra.service");
 
 /**
  * Contrôleur pour publier un voyage sur Instagram en carrousel.
@@ -18,6 +19,12 @@ const publierSurInstagram = async (id) => {
    if (!voyage) {
       console.error('Voyage non trouvé');
   throw new Error("Voyage introuvable");
+    }
+
+    const now = new Date();
+if (new Date(voyage.date_de_depart) < now) {
+  console.warn("❌ La date de départ est déjà passée. Impossible de publier.");
+  return { message: "Impossible de publier : la date de départ est déjà passée." };
     }
 
     // 2. Vérifier si publication Facebook existe déjà
@@ -62,8 +69,12 @@ const publierSurInstagram = async (id) => {
     console.log('🖼️ URLs Cloudinary :', imageUrls);
 
     // 6️⃣ Publier en carousel
-    const result = await publishCarouselInstagram(imageUrls, caption);
-
+    let result;
+if (imageUrls.length === 1) {
+  result = await publishSingleImageInstagram(imageUrls[0], caption);
+} else {
+  result = await publishCarouselInstagram(imageUrls, caption);
+}
 
     // 7️⃣ Vérifier l'existence sur Instagram avant de sauvegarder
 const existeSurInstagram = await verifierPublicationInstagram(result.post_id);
@@ -116,6 +127,124 @@ const publierSurInstagralSeule = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
+};
+
+
+
+const publierSurInstagramOmra = async (id) => {
+  try {
+    // 1️⃣ Récupérer l’Omra
+    const omra = await Omra.findByPk(id);
+    if (!omra) {
+      throw new Error('Omra introuvable');
+    }
+
+    
+
+    const now = new Date();
+if (new Date(omra.date_de_depart) < now) {
+  console.warn("❌ La date de départ de l'Omra est dépassée. Publication refusée.");
+  return { message: "Impossible de publier : la date de départ est dépassée." };
+    }
+    
+
+    // 2️⃣ Empêcher les doublons
+    const publicationExistante = await publicationService.getByPlatformAndOmra('instagram', id);
+    console.log('publicationExistante:', publicationExistante);
+    if (publicationExistante) {
+      console.warn("⚠️ Publication déjà existante sur Instagram pour cette Omra.");
+      return {
+    status: 200,
+    body: { message: 'Cette Omra a déjà été publiée sur Instagram.' }
+  };
+    }
+
+    // 3️⃣ Préparer les images (une string ou un tableau JSON)
+    let images = [];
+    if (omra.image) {
+      if (omra.image.startsWith('[')) {
+        images = JSON.parse(omra.image);
+      } else {
+        images = [omra.image];
+      }
+    }
+    if (!images.length) {
+      throw new Error('Aucune image valide trouvée pour cette Omra');
+    }
+
+    // 4️⃣ Uploader sur Cloudinary
+    const imageUrls = [];
+    for (const file of images) {
+      const localPath = path.join(__dirname, '..', 'public', 'images', file);
+            console.log("🖼️ Tentative d'upload pour :", localPath);
+
+      if (!fs.existsSync(localPath)) {
+        throw new Error(`Fichier introuvable : ${file}`);
+      }
+      const url = await uploadToCloudinary(localPath);
+      imageUrls.push(url);
+    }
+        console.log('🖼️ URLs Cloudinary :', imageUrls);
+
+    // 5️⃣ Construire la légende
+    const caption =
+      `🕋 Nouvelle Omra : ${omra.titre}\n` +
+      `📍 ${omra.description}\n` +
+      `💰 ${omra.prix} €\n` +
+      `📅 Départ : ${omra.date_de_depart}\n` +
+      `⏳ Durée : 15 jours\n` +
+      `🔗 https://tondomaine.com/web/infos_omra/${omra.id}`;
+
+    let post_id;
+
+if (imageUrls.length === 1) {
+  const result = await publishSingleImageInstagram(imageUrls[0], caption);
+  post_id = result.post_id;
+} else {
+  const result = await publishCarouselInstagram(imageUrls, caption);
+  post_id = result.post_id;
+}
+    // 7️⃣ Vérifier puis récupérer le shortcode
+    const ok = await verifierPublicationInstagram(post_id);
+    if (!ok) {
+      throw new Error('La publication Instagram n’a pas été trouvée après envoi');
+    }
+    const shortcode = await getInstagramShortcode(post_id);
+    const instagramURL = `https://www.instagram.com/p/${shortcode}`;
+
+    // 8️⃣ Enregistrer dans Omra et Publication
+    omra.instagram_post_id = post_id;
+    await omra.save();
+
+    await publicationService.publier({
+      plateforme: 'instagram',
+      id_omra: id,
+      id_post_instagram: post_id,
+      url_post: instagramURL
+    });
+
+    // 9️⃣ Marquer comme publié
+    await omraService.updateOmra(id, { est_publier: true });
+
+    return { message: 'Omra publiée sur Instagram', postId: post_id, url: instagramURL };
+
+  } catch (error) {
+    console.error('Erreur publication Instagram Omra :', error.message);
+    return { message: 'Erreur Instagram', error: error.message };
+  }
+};
+
+// Route Express
+const publierSurInstagramOmraSeule = async (req, res) => {
+  const id = req.params.id;
+  const result = await publierSurInstagramOmra(id);
+  if (result.dejaPublie) {
+    return res.status(200).json({ message: result.message });
+  }
+  if (result.error) {
+    return res.status(500).json({ message: result.message, error: result.error });
+  }
+  res.status(200).json(result);
 };
 
 //recuperer tous les publications 
@@ -195,8 +324,24 @@ const supprimerCommentairePublication = async (req, res) => {
   const { commentId } = req.params;
   console.log('🔍 Suppression du commentaire instgram...');
   console.log('🆔 Commentaire ID reçu :', commentId);
-  try {
-    const reponse = await supprimerCommentaire(commentId);
+ try {
+    // 1️⃣ Trouver le commentaire dans la base pour obtenir l'ID Facebook
+    const commentaire = await Commentaire.findByPk(commentId);
+
+    if (!commentaire) {
+      return res.status(404).json({ message: "Commentaire non trouvé en base de données." });
+    }
+
+    const id_commentaire_instagram = commentaire.id_commentaire_instagram;
+
+    if (!id_commentaire_instagram) {
+      return res.status(400).json({ message: "Ce commentaire n'est pas lié à Facebook." });
+    }
+
+    // 2️⃣ Supprimer sur Facebook et en base de données
+    const reponse = await supprimerCommentaire(id_commentaire_instagram);
+
+    // 4️⃣ Répondre au client
     res.status(200).json(reponse);
   } catch (error) {
     console.error('🚫 Erreur finale renvoyée au client :', error.message);
@@ -239,6 +384,8 @@ module.exports =
 {
   publierSurInstagram,
   publierSurInstagralSeule,
+  publierSurInstagramOmra,
+  publierSurInstagramOmraSeule,
     recupererCommentairesPublication,
      getNotificationsCount,
     resetNotificationsCount,

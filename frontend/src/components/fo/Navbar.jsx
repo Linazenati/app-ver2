@@ -68,8 +68,7 @@ function Navbar() {
                   <i className="fas fa-visa mr-2"></i> Visa
                 </Link>
                 <ul className="dropdown-menu" aria-labelledby="visaDropdown">
-                  <li><Link to="/web/Visatouristique" className="dropdown-item">Visa Touristique</Link></li>
-                  <li><Link to="/web/Visadetudes" className="dropdown-item">Visa d'Études</Link></li>
+                  <li><Link to="/web/Visatouristique" className="dropdown-item">Rendez vous de Visa</Link></li>
                 </ul>
               </div>
 

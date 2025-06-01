@@ -1,292 +1,237 @@
-import React, { useEffect, useState } from "react";
-import {
-  Button,
-  Table,
-  Modal,
-  Input,
-  Form,
-  Popconfirm,
-  message,
-  DatePicker,
-  InputNumber,
-  Upload,
-  Select
-} from "antd";
-import {
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
+import React, { useEffect, useState, useCallback } from "react";
+import { Table, Button, Form, Row, Col, Alert, Spinner, Modal } from "react-bootstrap";
+import { Eye, Pencil, Trash } from "react-bootstrap-icons";
+import toast, { Toaster } from "react-hot-toast";
 import omraService from "../../services-call/omra";
-import { useUser } from "../../contexts/UserContext";
-import dayjs from "dayjs";
+import ModifierOmraModal from "../../components/bo/ModifierOmraModal";
+import ModalPublicationVoyage from "../../components/bo/modalPublication";
 
-export default function ListeOmraPage() {
-  const { user } = useUser();
-  console.log("User Context:", user); // Vérifie la valeur du contexte utilisateur
+const ListeOmraPage = () => {
+  const [state, setState] = useState({
+    voyages: [],
+    count: 0,
+    error: "",
+    loading: false,
+    search: "",
+    limit: 5,
+    offset: 0,
+    orderBy: "createdAt",
+    orderDir: "ASC",
+    plateforme: "",
+    estPublier: "",
+    annee: "",
+    mois: "",
+  });
 
-  const token =
-    user?.token ||
-    (() => {
-      const token = localStorage.getItem("token");
-      console.log("Token depuis localStorage:", token); // Vérifie le token récupéré
-      return token ? token : null;
-    })();
+  const [showModal, setShowModal] = useState(false);
+  const [selectedVoyage, setSelectedVoyage] = useState(null);
+  const [successMessages, setSuccessMessages] = useState([]);
+  const [errorMessages, setErrorMessages] = useState([]);
+  const [showModifierModal, setShowModifierModal] = useState(false);
+  const [voyageToEdit, setVoyageToEdit] = useState(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [idToDelete, setIdToDelete] = useState(null);
 
-  console.log("Token utilisé:", token); // Vérifie le token final utilisé pour la requête
+  const fetchVoyages = useCallback(async () => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: "" }));
+      const params = {
+        params: {
+          search: state.search,
+          limit: state.limit,
+          offset: state.offset,
+          orderBy: state.orderBy,
+          orderDir: state.orderDir,
+          plateforme: state.plateforme,
+          est_publier: state.estPublier || undefined,
+          annee_de_depart: state.annee || undefined,
+          mois_de_depart: state.mois ? String(state.mois).padStart(2, '0') : undefined,
+        },
+      };
 
-  const [omras, setOmras] = useState([]);
-  const [searchText, setSearchText] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingOmra, setEditingOmra] = useState(null);
-  const [form] = Form.useForm();
-  const [imageUrl, setImageUrl] = useState(null);
-
-  const fetchOmras = () => {
-    console.log("Appel à l'API pour récupérer les Omras...");
-    omraService
-      .getAll(token)
-      .then((res) => {
-        console.log("Réponse API:", res);
-        if (res?.data?.rows) {
-          setOmras(res.data.rows);
-        } else {
-          console.error("Pas de données dans la réponse.");
-        }
-      })
-      .catch((err) => {
-        console.error("Erreur de récupération des Omras :", err);
-        message.error("Erreur d'autorisation (403), veuillez vous reconnecter.");
-      });
-  };
+      const response = await omraService.getAll(params);
+      setState((prev) => ({
+        ...prev,
+        voyages: response.data.data || [],
+        count: response.data.total || 0,
+        loading: false,
+      }));
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        error: error.response?.data?.message || "Erreur lors du chargement",
+        loading: false,
+      }));
+    }
+  }, [state.search, state.limit, state.offset, state.orderBy, state.orderDir, state.plateforme, state.estPublier, state.annee, state.mois]);
 
   useEffect(() => {
-    console.log("useEffect exécuté");
-    if (token) {
-      console.log("Token disponible, récupération des Omras...");
-      fetchOmras();
-    } else {
-      console.log("Pas de token disponible.");
-    }
-  }, [token]);
+    fetchVoyages();
+  }, [fetchVoyages]);
 
-  const openModal = (omra = null) => {
-    console.log("Ouverture du modal pour :", omra); // Vérifie les valeurs de l'Omra
-    setEditingOmra(omra);
-    setIsModalOpen(true);
-    if (omra) {
-      form.setFieldsValue({
-        ...omra,
-        dateDepart: omra.date_de_depar ? dayjs(omra.date_de_depart) : null,
-      });
-      setImageUrl(omra.image);
-    } else {
-      form.resetFields();
-      setImageUrl(null);
-    }
+  const handleSort = (column) => {
+    const newDir = state.orderBy === column && state.orderDir === "ASC" ? "DESC" : "ASC";
+    setState((prev) => ({ ...prev, orderBy: column, orderDir: newDir, offset: 0 }));
   };
 
-  const handleDelete = async (id) => {
-    console.log("Suppression de l'Omra avec id :", id);
+  const handleFilterChange = (type, value) => {
+    const updates = {};
+    if (type === 'limit') updates.limit = Number(value);
+    else if (type === 'search') updates.search = value;
+    else if (type === 'plateforme') updates.plateforme = value;
+    else if (type === 'estPublier') updates.estPublier = value;
+    else if (type === 'annee') updates.annee = value.replace(/\D/g, '').slice(0, 4);
+    else if (type === 'mois') updates.mois = value.replace(/\D/g, '').slice(0, 2);
+
+    setState((prev) => ({ ...prev, ...updates, offset: 0 }));
+  };
+
+  const handlePagination = (direction) => {
+    const newOffset = direction === 'next' ? state.offset + state.limit : Math.max(0, state.offset - state.limit);
+    setState((prev) => ({ ...prev, offset: newOffset }));
+  };
+
+  const handleOpenModal = (voyage) => {
+    setSelectedVoyage(voyage);
+    setShowModal(true);
+    setSuccessMessages([]);
+    setErrorMessages([]);
+  };
+
+  const handleCloseModal = () => setShowModal(false);
+
+  const handleVoyagePublished = (updatedVoyage) => {
+    setState((prev) => ({
+      ...prev,
+      voyages: prev.voyages.map((v) => v.id === updatedVoyage.id ? updatedVoyage : v)
+    }));
+  };
+
+  const handleEdit = (voyage) => {
+    setVoyageToEdit(voyage);
+    setShowModifierModal(true);
+  };
+
+  const confirmDeleteClick = (id) => {
+    setIdToDelete(id);
+    setShowConfirmDelete(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirmDelete(false);
+    if (!idToDelete) return;
     try {
-      await omraService.deleteItem(id, token);
-      message.success("Omra supprimée avec succès !");
-      fetchOmras();
-    } catch (err) {
-      message.error("Erreur lors de la suppression.");
+      await omraService.deletee(idToDelete);
+      fetchVoyages();
+      toast.success("Omra supprimé avec succès !");
+    } catch {
+      toast.error("Erreur lors de la suppression d'Omra");
     }
   };
-
-  const handleFinish = async (values) => {
-    console.log("Formulaire soumis avec les valeurs :", values); // Vérifie les valeurs du formulaire
-    try {
-      const data = {
-        ...values,
-        date_de_depart: values.date_de_depart.format("YYYY-MM-DD"),
-        image: imageUrl,
-      };
-      if (editingOmra) {
-        console.log("Mise à jour de l'Omra avec id :", editingOmra.id);
-        await omraService.updateItem(editingOmra.id, data, token);
-        message.success("Omra modifiée avec succès !");
-      } else {
-        console.log("Création d'une nouvelle Omra");
-        await omraService.createItem(data, token);
-        message.success("Omra ajoutée avec succès !");
-      }
-      setIsModalOpen(false);
-      fetchOmras();
-    } catch (err) {
-      console.error("Erreur lors de l'ajout ou modification de l'Omra:", err);
-      message.error("Erreur : " + (err.response?.data?.message || "Erreur inconnue"));
-    }
-  };
-
-  const propsUpload = {
-    beforeUpload: (file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImageUrl(reader.result);
-        console.log("Image téléchargée:", reader.result); // Vérifie l'URL de l'image téléchargée
-      };
-      reader.readAsDataURL(file);
-      return false;
-    },
-    showUploadList: false,
-  };
-
-  const filteredOmras = omras.filter((o) =>
-    o.titre.toLowerCase().includes(searchText.toLowerCase())
-  );
-  console.log("Omras filtrées :", filteredOmras); // Vérifie les Omras filtrées
-
-  const columns = [
-    { title: "Nom", dataIndex: "titre", key: "nom" },
-    { title: "Prix (DZD)", dataIndex: "prix", key: "prix" },
-    { title: "Date de départ", dataIndex: "date_de_depart", key: "dateDepart" },
-    { title: "Durée (jours)", dataIndex: "duree", key: "duree" },
-    { title: "Status", dataIndex: "status", key: "status" },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (text, record) => (
-        <>
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => openModal(record)}
-          />
-          <Popconfirm
-            title="Supprimer cette Omra ?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Oui"
-            cancelText="Non"
-          >
-            <Button type="text" icon={<DeleteOutlined />} danger />
-          </Popconfirm>
-        </>
-      ),
-    },
-  ];
 
   return (
-    <div className="content">
-      {/* Barre fixe */}
-      <div
-        style={{
-          position: "fixed",
-          left: 250,
-          right: 0,
-          background: "white",
-          zIndex: 1000,
-          padding: "10px 20px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-          height: "80px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ margin: 0 }}>Liste des Omras</h2>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <Input.Search
-              placeholder="Rechercher..."
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 200 }}
-            />
-            
-          </div>
-        </div>
+    <div className="p-3">
+      <Toaster position="top-right" />
+      <h3>Liste des voyages</h3>
+      {state.error && <Alert variant="danger">{state.error}</Alert>}
+
+      <Row className="mb-3 g-2 align-items-center">
+        <Col md={3}>
+          <Form.Control placeholder="Rechercher..." value={state.search} onChange={(e) => handleFilterChange('search', e.target.value)} />
+        </Col>
+        <Col md={2}>
+          <Form.Select value={state.plateforme} onChange={(e) => handleFilterChange('plateforme', e.target.value)}>
+            <option value="">Plateforme</option>
+            <option value="site">Site</option>
+            <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
+          </Form.Select>
+        </Col>
+        <Col md={2}>
+          <Form.Select value={state.estPublier} onChange={(e) => handleFilterChange('estPublier', e.target.value)}>
+            <option value="">Tous statuts</option>
+            <option value="true">Publiés</option>
+            <option value="false">Non publiés</option>
+          </Form.Select>
+        </Col>
+        <Col md={2}>
+          <Form.Control type="number" placeholder="Année" value={state.annee} onChange={(e) => handleFilterChange('annee', e.target.value)} />
+        </Col>
+        <Col md={2}>
+          <Form.Control type="number" placeholder="Mois" value={state.mois} onChange={(e) => handleFilterChange('mois', e.target.value)} />
+        </Col>
+      </Row>
+
+      <Table striped bordered hover responsive>
+        <thead className="table-dark">
+          <tr>
+            <th onClick={() => handleSort('id')}>ID {state.orderBy === 'id' && (state.orderDir === 'ASC' ? '▲' : '▼')}</th>
+            <th>Titre</th>
+            <th>Date De Départ</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {state.voyages.map((v) => (
+            <tr key={v.id}>
+              <td>{v.id}</td>
+              <td>{v.titre}</td>
+              <td>{v.date_de_depart}</td>
+           
+              <td><span className={`badge ${v.est_publier ? 'bg-success' : 'bg-secondary'}`}>{v.est_publier ? 'Publié' : 'Brouillon'}</span></td>
+              <td>
+                <Button variant="info" size="sm" className="me-2" onClick={() => handleOpenModal(v)}><Eye /> Voir</Button>
+                <Button variant="warning" size="sm" className="me-2" onClick={() => handleEdit(v)}><Pencil /> Modifier</Button>
+                <Button variant="danger" size="sm" onClick={() => confirmDeleteClick(v.id)}><Trash /> Supprimer</Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <div className="d-flex justify-content-center align-items-center gap-3 mt-4">
+        <Button variant="outline-primary" onClick={() => handlePagination('prev')} disabled={state.offset === 0 || state.loading}>Précédent</Button>
+        <span>Page {(state.offset / state.limit) + 1} / {Math.ceil(state.count / state.limit) || 1}</span>
+        <Button variant="outline-primary" onClick={() => handlePagination('next')} disabled={state.offset + state.limit >= state.count || state.loading}>Suivant</Button>
       </div>
 
-      {/* Espace barre */}
-      <div style={{ height: "80px" }} />
-
-      {/* Tableau */}
-      <div style={{ padding: "20px" }}>
-        <Table
-          columns={columns}
-          dataSource={filteredOmras}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
+      {selectedVoyage && (
+        <ModalPublicationVoyage
+          visible={showModal}
+          onClose={handleCloseModal}
+          voyage={null}
+          omra={selectedVoyage}
+          successMessages={successMessages}
+          errorMessages={errorMessages}
+          onVoyagePublished={handleVoyagePublished}
         />
-      </div>
+      )}
 
-      {/* Modal ajouter / modifier */}
-      <Modal
-        title={editingOmra ? "Modifier l'Omra" : "Ajouter une Omra"}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleFinish}
-        >
-          <Form.Item
-            label="Nom"
-            name="titre"
-            rules={[{ required: true, message: "Veuillez entrer un nom" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Description"
-            name="description"
-            rules={[{ required: true, message: "Veuillez entrer une description" }]}
-          >
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item
-            label="Prix (DZD)"
-            name="prix"
-            rules={[{ required: true, message: "Veuillez entrer un prix" }]}
-          >
-            <InputNumber min={0} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Date de départ"
-            name="date_de_depart"
-            rules={[{ required: true, message: "Veuillez entrer une date" }]}
-          >
-            <DatePicker style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Durée (jours)"
-            name="duree"
-            rules={[{ required: true, message: "Veuillez entrer la durée" }]}
-          >
-            <InputNumber min={1} style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            label="Statut"
-            name="status"
-            rules={[{ required: true, message: "Veuillez sélectionner un statut" }]}
-          >
-            <Select placeholder="Sélectionner un statut">
-              <Select.Option value="disponible">Disponible</Select.Option>
-              <Select.Option value="épuisé">Épuisé</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Image">
-            <Upload {...propsUpload}>
-              <Button icon={<UploadOutlined />}>Télécharger une image</Button>
-            </Upload>
-            {imageUrl && (
-              <img src={imageUrl} alt="preview" className="mt-2 w-full h-40 object-cover rounded-lg" />
-            )}
-          </Form.Item>
+        <ModifierOmraModal
+  show={showModifierModal}
+  handleClose={() => setShowModifierModal(false)}
+  omraId={voyageToEdit?.id}
+  onUpdateSuccess={() => {
+    fetchVoyages();
+    setShowModifierModal(false);
+  }}
+/>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              {editingOmra ? "Modifier" : "Ajouter"}
-            </Button>
-          </Form.Item>
-        </Form>
+      
+
+      <Modal show={showConfirmDelete} onHide={() => setShowConfirmDelete(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirmer la suppression</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>Êtes-vous sûr de vouloir supprimer ce voyage ?</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowConfirmDelete(false)}>Annuler</Button>
+          <Button variant="danger" onClick={handleConfirmDelete}>Supprimer</Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );
-}
+};
+
+export default ListeOmraPage;

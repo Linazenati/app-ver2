@@ -6,6 +6,9 @@ const facebookController = require("../controllers/facebook.controller");
 //✏️ publier un voyage sur fb  par ID
 router.post("/:id/publier", facebookController.publierSurFacebookSeule);
 
+//✏️ publier un voyage sur fb  par ID
+router.post("/:id/publierOmra", facebookController.publierOmraSurFacebookSeule);
+
 // recuperer tous les publications 
 router.get('/publications', facebookController.getAllPublications);
 

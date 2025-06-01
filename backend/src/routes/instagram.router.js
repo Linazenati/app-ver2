@@ -5,6 +5,11 @@ const instagramController = require("../controllers/instagram.controller");
 
 //✏️ publier un voyage sur fb  par ID
 router.post("/:id/publier", instagramController.publierSurInstagralSeule);
+
+//✏️ publier un voyage sur fb  par ID
+router.post("/:id/publierOmra", instagramController.publierSurInstagramOmraSeule);
+
+
 // recuperer tous les publications 
 router.get('/publications', instagramController.getAllInstagramPublications);
 

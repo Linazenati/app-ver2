@@ -3,15 +3,31 @@
 const axios = require('axios');
 const { IG_ACCESS_TOKEN, INSTAGRAM_USER_ID, GRAPH_API_VERSION } = require('../config/instagram.config');
 const { sauvegarderCommentaires , supprimerCommentaireEnBase} = require('./commentaire.service');
-const { Publication , Commentaire} = require('../models');
+const { Publication, Commentaire } = require('../models');
+
+const SEUIL_MAJ_MS = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Crée un container média pour une image (carousel item) sur Instagram.
  * @param {string} imageUrl - URL publique de l'image
  * @returns {Promise<string>} - ID du container créé
  */
 
+const { peutPublier, incrementerPublication, getEtatQuota } = require('./throttle.service');
+const quotaService = require('../services/recuperationQuota.service');
 
-async function createMediaContainer(imageUrl, isCarouselItem = false) {
+
+
+async function createMediaContainer(imageUrl, isCarouselItem = false , caption = "") {
+  const quota =  await getEtatQuota();
+    console.log("📊 État actuel du quota publication :", quota);
+
+  // 🔐 Vérifie le quota avant de publier
+  if (!peutPublier()) {
+    console.log("🚫 Trop de publications Facebook. Réessaye plus tard.");
+    throw new Error("Limite de publications atteinte.");
+  }
+
   const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${INSTAGRAM_USER_ID}/media`;
   try {
     const params = {
@@ -22,7 +38,10 @@ async function createMediaContainer(imageUrl, isCarouselItem = false) {
     // ajouter ce champ seulement si c'est un enfant de carrousel
     if (isCarouselItem) {
       params.is_carousel_item = true;
+    } else if (caption) {
+      params.caption = caption;
     }
+
 
     const response = await axios.post(url, null, {
       params,
@@ -64,6 +83,9 @@ async function createCarouselContainer(childrenIds, caption) {
   }
 }
 
+
+
+
 /**
  * Publie un container média carrousel sur le feed Instagram.
  * @param {string} creationId - ID du container carousel
@@ -83,11 +105,26 @@ async function publishCarousel(creationId) {
 
 
     console.log('✅ Carousel publié, post_id :', response.data.id);
+    // ✅ Publication réussie
+    await incrementerPublication(); // ➕ Mise à jour du quota après succès
+      console.log("🔁 Incrémentation publication appelée");
+  console.log("✅ Publication Facebook réussie et quota mis à jour !");
+
     return response.data.id;
-  } catch (err) {
-    console.error('❌ Erreur publication carousel :', err.response?.data || err.message);
-    throw new Error('Échec publication carousel Instagram');
+  } catch (error) {
+  const errorData = error.response?.data || error.message;
+  console.error("❌ Erreur lors de la publication sur Facebook :", errorData);
+
+  // 🔍 Gestion spécifique pour les erreurs réseau ou quota
+  if (error.code === 'ETIMEDOUT') {
+    console.error("⏱️ Temps d'attente dépassé (timeout) lors de la requête Facebook.");
+  } else if (error.response?.status === 429) {
+    console.error("🚫 Erreur de quota : trop de requêtes envoyées.");
   }
+
+  // Tu peux aussi propager l'erreur à un appelant si nécessaire :
+  throw new Error("Échec de la publication Facebook : " + errorData?.error?.message || error.message);
+}
 }
 
 /**
@@ -97,38 +134,44 @@ async function publishCarousel(creationId) {
  * @returns {Promise<{ post_id: string }>} - ID de la publication
  */
 async function publishCarouselInstagram(imageUrls, caption) {
-  try {
-    // ✅ Initialisation de childrenIds
-    let childrenIds = [];
-
-    // 📸 Cas 1 : Une seule image
+   try {
     if (imageUrls.length === 1) {
-  const mediaId = await createMediaContainer(imageUrls[0], false); // image simple
-  const postId = await publishCarousel(mediaId); // fonctionne pour image simple
-  return { post_id: postId };
-} 
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      // ✅ Utilise la fonction pour image unique
+      return await publishSingleImageInstagram(imageUrls[0], caption);
+    }
 
-for (const url of imageUrls) {
-  const id = await createMediaContainer(url, true);
-  childrenIds.push(id);
-  console.log("🧩 Children IDs :", childrenIds);
-  await wait(12000); // 1.5 sec entre les requêtes
-}
-    
-  // 2. Créer le container carousel
-  const carouselId = await createCarouselContainer(childrenIds, caption);
+    const childrenIds = [];
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // 3. Publier le carousel sur le feed
-  const postId = await publishCarousel(carouselId);
+    for (const url of imageUrls) {
+      const id = await createMediaContainer(url, true);
+      childrenIds.push(id);
+      console.log("🧩 Children IDs :", childrenIds);
+      await wait(12000);
+    }
+
+    const carouselId = await createCarouselContainer(childrenIds, caption);
+    const postId = await publishCarousel(carouselId);
 
     return { post_id: postId };
-    }  catch (error) {
-  console.error("❌ Erreur Instagram :", JSON.stringify(error.response?.data || error, null, 2));
-  throw new Error("Échec publication carousel Instagram");
-}
+  } catch (error) {
+    console.error("❌ Erreur Instagram (carousel) :", JSON.stringify(error.response?.data || error, null, 2));
+    throw new Error("Échec publication carousel Instagram");
+  }
 }
 
+const publishSingleImageInstagram = async (imageUrl, caption) => {
+  try {
+    const creationId = await createMediaContainer(imageUrl, false, caption);
+    const postId = await publishCarousel(creationId); // même méthode que pour carrousel
+    return {
+      post_id: postId
+    };
+  } catch (error) {
+    console.error("❌ Erreur publication image unique Instagram :", error.message);
+    throw new Error("Échec publication image unique Instagram");
+  }
+};
 
 
 async function getInstagramShortcode(instagramPostId) {
@@ -164,7 +207,24 @@ const getPublications = async () => {
 
 // 📝 Récupérer les commentaires d'une publication
 const recupererCommentaires = async (instagram_post_id) => {
-  try {
+ try {
+    // Vérifier et afficher état du quota (optionnel, pour debug)
+    const etatQuota = await quotaService.getEtatRecupQuota();
+    console.log("📊 État actuel des quotas :", etatQuota);
+
+    // Vérifier si on peut récupérer (via quota)
+    if (
+      etatQuota.recupMinuteRestante <= 0 ||
+      etatQuota.recupHeureRestante <= 0 ||
+      etatQuota.recupJourRestante <= 0
+    ) {
+      console.warn("🚫 Quota de récupération atteint.");
+      return []; // ou throw une erreur custom
+    }
+
+    // Incrémenter le quota car on lance une récupération
+    await quotaService.incrementerQuota();
+   
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${instagram_post_id}/comments`;
     const response = await axios.get(url, {
       params: {
@@ -191,6 +251,7 @@ const recupererCommentaires = async (instagram_post_id) => {
     await sauvegarderCommentaires(publication.id, commentaires);
     console.log('✅ Commentaires sauvegardés avec succès.');
 
+       
     return commentaires;
   } catch (error) {
     console.error('Erreur lors de la récupération des commentaires:', error.response?.data || error.message);
@@ -203,6 +264,17 @@ const recupererCommentaires = async (instagram_post_id) => {
 // 📝 Supprimer un commentaire
 const supprimerCommentaire = async (commentId) => {
   try {
+    const etatSuppQuota = await quotaService.getEtatSuppQuota();
+
+  if (
+    etatSuppQuota.suppMinuteRestante <= 0 ||
+    etatSuppQuota.suppHeureRestante <= 0 ||
+    etatSuppQuota.suppJourRestante <= 0
+  ) {
+    throw new Error('Quota de suppression dépassé');
+  }
+
+  await quotaService.incrementerSuppQuota();
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${commentId}`;
     console.log('📡 Suppression en cours...');
     console.log('🔗 URL appelée :', url);
@@ -228,7 +300,9 @@ if (!commentaire) {
 
 // Suppression en base de données
 await supprimerCommentaireEnBase(commentId, commentaire.id_publication, 'instagram');
-console.log('✅ Commentaire supprimé en base de données.');
+    console.log('✅ Commentaire supprimé en base de données.');
+           quotaService.incrementerSuppressionInstagram();
+
     return response.data;
   } catch (error) {
     console.error('❌ Erreur lors de la suppression du commentaire :');
@@ -263,7 +337,7 @@ const masquerCommentaire = async (commentId) => {
 }
 
 // 📝 Récupérer les Likes d'une publication
-const recupererLikes = async (instagram_post_id) => {
+const recupererLikesInstagram = async (instagram_post_id) => {
  try {
     const url = `https://graph.facebook.com/${GRAPH_API_VERSION}/${instagram_post_id}?fields=like_count`;
     const response = await axios.get(url, {
@@ -275,7 +349,7 @@ const recupererLikes = async (instagram_post_id) => {
     });
 
     const nombreLikes = response.data.like_count || 0;
-    console.log('✅ Nombre de Likes :', nombreLikes);
+    console.log('✅ Nombre de Likes instagram :', nombreLikes);
 
     return nombreLikes;
   } catch (error) {
@@ -313,7 +387,8 @@ module.exports = {
   recupererCommentaires,
   supprimerCommentaire,
   masquerCommentaire,
-  recupererLikes,
+  recupererLikesInstagram,
   verifierPublicationInstagram,
-  getInstagramShortcode
+  getInstagramShortcode,
+  publishSingleImageInstagram 
 };

@@ -31,7 +31,14 @@ module.exports = (sequelize, DataTypes) => {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false,
-  }  }, {
+    },
+  est_nouveau: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true // Nouveau commentaire par défaut
+    }
+  
+  
+  }, {
     sequelize,
     modelName: 'Commentaire',
   });

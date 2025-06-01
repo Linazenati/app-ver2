@@ -1,105 +1,160 @@
 const service = require("../services/hotel.service")
-
 const controller = {}
 
-controller.rechercher = async (req, res) => {
-  try {
-      const { ville, arrival_date, departure_date ,nbr_chambre,nbr_adulte, age_enfants} = req.query;
-      
-      const hotels = await service.find(ville, arrival_date, departure_date ,nbr_chambre,nbr_adulte, age_enfants);
-    await service.saveHotelsInDB(hotels, ville);
-    res.status(200).json({ success: true, data: hotels });
-  }catch (error) {
-    console.error(error);  // Log l'erreur pour mieux la diagnostiquer
-    res.status(500).json({ success: false, message: error.message });
+
+controller.getAllVilles = async (req, res) => {
+ try {
+    const { region } = req.params;
+    const villes = await service.getallVilles(region);
+    res.status(200).json(villes);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des villes par région :', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
 
-controller.saveAllHotels = async (req, res) => {
+controller.getHotelsByVilleId = async (req, res) => {
+  const { villeId } = req.params;
+
   try {
-    const { arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants } = req.query;
-
-    console.log("Données reçues dans saveAllHotels:", req.query);
-
-    if (!arrival_date || !departure_date || !nbr_chambre || !nbr_adulte) {
-      return res.status(400).json({ error: "Champs obligatoires manquants" });
+    if (!villeId) {
+      return res.status(400).json({ message: "Paramètre 'villeId' manquant" });
     }
 
-    await service.saveAllHotels(arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants);
-    res.status(200).json({ success: true, message: "Tous les hôtels ont été enregistrés avec succès." });
+    const hotels = await service.findHotelsByVilleId(villeId);
+
+    res.json(hotels);
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Erreur lors de la récupération des hôtels :', error);
+    res.status(500).json({ message: 'Erreur serveur' });
+  }
+};
+
+controller.searchAndSaveHotelsForVille = async (req, res) => {
+  const {
+    villeNom,
+    arrival_date,
+    departure_date,
+    nbr_chambre,
+    nbr_adulte,
+    age_enfants
+  } = req.query;
+
+  try {
+    if (!villeNom || !arrival_date || !departure_date || !nbr_chambre || !nbr_adulte) {
+      return res.status(400).json({ message: "Paramètres obligatoires manquants." });
+    }
+
+    const hotels = await service.searchAndSaveHotelsForVille(
+      villeNom,
+      arrival_date,
+      departure_date,
+      parseInt(nbr_chambre),
+      parseInt(nbr_adulte),
+      age_enfants
+    );
+
+    res.status(200).json(hotels);
+  } catch (error) {
+    console.error("Erreur dans searchAndSaveHotelsForVille (controller):", error.message);
+    res.status(500).json({ message: "Erreur serveur lors de la recherche des hôtels.", error: error.message });
   }
 };
 
 
-controller.recupererHotelByVille = async (req, res) => {
+
+controller.create = async (req, res) => {
+  const { nom, region, dest_id } = req.body;
   try {
-    const { ville } = req.params;
-    
+    const newVille = await service.createVille(nom, region, dest_id);
+    res.status(201).json(newVille);
+  } catch (error) {
+    res.status(400).json({ message: "Erreur lors de la création de la ville", error: error.message });
+  }
+};
+controller.getVilleById = async (req, res) => {
+  const { villeId } = req.params;
+  try {
+    const ville = await service.getVilleById(villeId);
     if (!ville) {
-      return res.status(400).json({ success: false, message: "Ville obligatoire" });
+      return res.status(404).json({ message: "Ville non trouvée" });
     }
-
-    const hotels = await service.getHotelsFromDbByVille(ville);
-
-    // parser les photos
-const hotelsAvecPhotosParsees = hotels.map(hotel => ({
-  ...hotel,
-  photos: typeof hotel.photos === 'string' ? JSON.parse(hotel.photos) : hotel.photos
-}));
-    
-    res.status(200).json({ success: true, data: hotelsAvecPhotosParsees });
+    res.status(200).json(ville);
   } catch (error) {
-    console.error("Erreur lors de la récupération depuis la DB:", error);
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Erreur lors de la récupération de la ville :", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
-};
-
-controller.getVillesByRegion = (req, res) => {
-  const region = req.params.region;
-  if (!region) {
-    return res.status(400).json({ error: "La région est requise" });
-  }
-
-  const villes = service.getVillesByRegion(region);
-
-  if (villes.length === 0) {
-    return res.status(404).json({ message: `Aucune ville trouvée pour la région '${region}'` });
-  }
-
-  return res.json(villes);
-};
-
-
-controller.searchRealTime = async (req, res) => {
-    try {
-        const { ville, arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants } = req.query;
-
-        if (!ville || !arrival_date || !departure_date || !nbr_chambre || !nbr_adulte) {
-            return res.status(400).json({ message: "Tous les paramètres sont requis" });
-        }
-
-        const hotels = await service.searchRealTimeAvailability(ville, arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants);
-        res.json(hotels);
-    } catch (error) {
-        console.error("Erreur recherche en temps réel :", error.message);
-        res.status(500).json({ message: "Erreur serveur lors de la recherche en temps réel" });
-    }
 };
 
 
 controller.getHotelById = async (req, res) => {
-  const { id } = req.params;
+  const { idhotel} = req.params;
+  console.log("ID brut reçu :", idhotel, "Type :", typeof idhotel);
+  const parsedId = parseInt(idhotel, 10); // 🔥 Important si l'ID est string
+
   try {
-    const hotel = await service.getHotelById(id);
+    const hotel = await service.getHotelById(parsedId);
     if (!hotel) {
-      return res.status(404).json({ message: 'Hôtel non trouvé' });
+      return res.status(404).json({ message: "Hôtel non trouvé" });
     }
     res.json(hotel);
   } catch (error) {
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    console.error("Erreur lors de la récupération de l'hôtel :", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
+
+
+controller.getAll = async (req, res) => {
+  try {
+    const {
+      search = '',
+      region,
+      limit = 50,
+      offset = 0,
+      orderBy = 'createdAt',
+      orderDir = 'ASC',
+    } = req.query;
+
+    const result = await service.getAllVilles({
+      search,
+      region,
+      limit,
+      offset,
+      orderBy,
+      orderDir,
+    });
+
+    res.json({
+      success: true,
+      total: result.total,
+      data: result.data
+    });
+  } catch (error) {
+    console.error('Erreur controller getAll:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Erreur serveur'
+    });
+  }
+};
+
+controller.remove = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await service.deleteVilleById(id);
+    res.json({
+      success: true,
+      message: 'Ville supprimée avec succès'
+    });
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      message: error.message || 'Ville non trouvée'
+    });
+  }
+};
+
 
 module.exports = controller;

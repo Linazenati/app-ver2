@@ -16,13 +16,17 @@ const MenuHotel = () => {
       const result = {};
       for (const region of regions) {
         try {
-          const response = await hotelService.getVillesByRegion(region);
+          const response = await hotelService.getAllVilles(region);
           result[region] = response.data;
+          console.log(`Données pour ${region} :`, response.data);
+
         } catch (err) {
           console.error(`Erreur de chargement des villes pour la région ${region}`, err);
           result[region] = [];
         }
       }
+      console.log("Résultat final à setVillesParRegion :", result);
+
       setVillesParRegion(result);
     };
 
@@ -43,22 +47,25 @@ const MenuHotel = () => {
       <i className="fas fa-hotel mr-2"></i> Hôtels
     </Link>
     <div className="dropdown-menu p-3" aria-labelledby="hotelsDropdown" style={{ minWidth: "600px" }}>
-      <div className="d-flex justify-content-between">
-        {Object.entries(villesParRegion).map(([region, villes]) => (
-          <div key={region} style={{ minWidth: "180px" }}>
-            <strong className="dropdown-header" style={{ color: "black" }} >{region}</strong>
-            {villes.map((ville) => (
-              <Link key={ville} to={`/web/hotel/${ville}`} className="dropdown-item">
-                {ville}
-              </Link>
-            ))}
-          </div>
-        ))}
+       <div className="d-flex justify-content-between">
+          {Object.entries(villesParRegion).map(([region, villes]) => (
+            <div key={region} style={{ minWidth: "180px" }}>
+              <strong className="dropdown-header" style={{ color: "black" }}>{region}</strong>
+              {villes.map((ville) => (
+                <Link
+                  key={ville.id}
+                  to={`/web/hotel/${ville.id}`}
+                  className="dropdown-item"
+                >
+                  {ville.nom}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
-
 
 export default MenuHotel;

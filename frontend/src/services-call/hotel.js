@@ -4,24 +4,35 @@ const API_POINT = "/hotel";
 
 const hotelService = {};
 
-// GET /hotel/
-hotelService.rechercher = (params) =>api.get(`${API_POINT}/`, { params  });
 
 
-// GET /hotel/Recupererhotels
-hotelService.recupererHotelByVille = (ville) => api.get(`${API_POINT}/Recupererhotels/${ville}`);
-
-
-hotelService.getVillesByRegion = (region) => api.get(`${API_POINT}/villes/${region}`);
-
-
-//recuperer temps réels
-
-hotelService.searchRealTime = (params) => api.get(`${API_POINT}/recherche-temps-reel`, { params });
+// GET /villes
+hotelService.getAllVilles = (region) => api.get(`${API_POINT}/ville/${region}`);
 
 
 
-// Route pour récupérer un hôtel par ID
+hotelService.getVilleById=(villeId) => 
+  api.get(`${API_POINT}/by-id/${villeId}`);
+
+
+///recuperer le hotels par ville
+hotelService.getHotelsByVilleId = (villeId) => api.get(`${API_POINT}/par-ville/${villeId}`);
+
+
+// Route pour rechercher et sauvegarder les hôtels via Booking
+hotelService.searchAndSaveHotelsForVille = (params) => api.get(`${API_POINT}/search-and-save-hotels`, { params });
+
+
 hotelService.getHotelById = (id) => api.get(`${API_POINT}/${id}`);
 
+hotelService.create = (data) => api.post(`${API_POINT}/ville`, data);
+
+
+
+
+  // GET /api/v1/villes/search-and-save-hotels?...
+hotelService.getAll = (params) => api.get(API_POINT, { params });
+
+  // DELETE /api/v1/villes/:id
+  hotelService.remove = (id) => api.delete(`${API_POINT}/${id}`);
 export default hotelService;

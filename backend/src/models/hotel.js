@@ -11,7 +11,10 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
         // Relation avec Ville
-       
+         Hotel.belongsTo(models.Ville, {
+        foreignKey: 'villeId',
+        as: 'villes'
+      });
 
         Hotel.hasMany(models.Reservation,
         {
@@ -41,6 +44,21 @@ photos: {
     Note_moyenne: DataTypes.FLOAT,
     Appréciation: DataTypes.STRING,
     Nombre_avis: DataTypes.INTEGER,
+    
+    // ✅ Ajout des prix
+  prix_euro: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+  },
+  prix_dinare: {
+    type: DataTypes.FLOAT,
+    allowNull: true
+    },
+  villeId: { // ✅ Clé étrangère vers Ville
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
+
    
   }, {
     sequelize,

@@ -34,7 +34,7 @@ voyageService.getVoyagesPubliesSurSite = () =>
   api.get(`${API_POINT}/publies/site`);
 
   // 🔍 Récupérer un voyage publié sur site avec commentaires des réseaux sociaux
-voyageService.getVoyagePublieAvecCommentaires = (id) =>
+voyageService.getDetailsVoyages = (id) =>
   api.get(`${API_POINT}/publies/siteCommentaire/${id}`);
 
   
