@@ -30,7 +30,12 @@ module.exports = (sequelize, DataTypes) => {
         {
           foreignKey: ' id_utilisateur_inscrit',
           as: 'reservation'});  // clé étrangère 
+  Utilisateur_inscrit.hasMany(models.Assurance, {
+    
+    foreignKey: 'id_utilisateur_inscrit',
   
+    as: 'assurances'
+  });
   }
   }
   Utilisateur_inscrit.init({

@@ -17,6 +17,10 @@ const amadeusRouter = require("./amadeus.router");
 const commentaireRouter = require("./commentaire.router");
 const hotelRouter = require("./hotel.router");
 const visaRouter = require("./visa.router");
+const volRouter = require("./vols.router");
+const assuranceRouter = require("./assurance.router");
+const apiconfigRouter = require("./apiconfig.router");
+
 module.exports = (app) => {
   // 📂 Fichiers statiques (images)
   app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
@@ -74,6 +78,14 @@ module.exports = (app) => {
 
   // 🏨 Hôtels
   app.use("/api/v1/hotel", hotelRouter);
+
+// ✈️ vols
+  app.use("/api/v1/vol", volRouter);
+
+  // 📑 Assurance
+  app.use("/api/v1/assurances", assuranceRouter);
+
+  app.use("/api/v1/config-apis", apiconfigRouter);
 
   // 🧭 Catch-all pour les routes non définies dans /api/v1
   app.use("/api/v1/", (req, res) => {

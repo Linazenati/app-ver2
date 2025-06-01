@@ -38,7 +38,9 @@ console.log("Plateformes reçues :", plateformes);
           instagram: { error: "La date de départ est déjà passée." },
         }
       });
+
     }
+    
 
 
  // 2. Lancer la publication pour chaque plateforme demandée
@@ -59,6 +61,7 @@ console.log("Plateformes reçues :", plateformes);
       try {
         const fbRes = await facebookController.publierSurFacebook(voyage.id); // true = mode silencieux (pas res.json)
         
+
         resultats.facebook = fbRes;
       } catch (err) {
         resultats.facebook = { error: err.message };
@@ -69,6 +72,7 @@ console.log("Plateformes reçues :", plateformes);
     if (plateformes.includes("instagram")) {
       try {
         const instaRes = await instagramController.publierSurInstagram(voyage.id);
+
         resultats.instagram = instaRes;
       } catch (err) {
         resultats.instagram = { error: err.message };
@@ -127,11 +131,13 @@ const publierMultiOmra = async (req, res) => {
     if (plateformes.includes("instagram")) {
       try {
         const instaRes = await instagramController.publierSurInstagramOmra(omra.id);
+
         resultats.instagram = instaRes;
       } catch (err) {
         resultats.instagram = { error: err.message };
       }
     }
+    // Ajoute ici d'autres plateformes si nécessaire...
 
     res.status(200).json({
       message: "Publication multiple terminée pour Omra.",
@@ -141,7 +147,9 @@ const publierMultiOmra = async (req, res) => {
   } catch (err) {
     console.error("Erreur publication Omra :", err.message);
     res.status(500).json({ message: "Erreur publication Omra", error: err.message });
-  }
+    
+    }
+
 };
 
 
@@ -171,6 +179,10 @@ const getById = async (req, res) => {
     res.status(500).json({ message: "Erreur de récupération", error: error.message });
   }
 };
+
+
+  
+
 
 
 // ✅ Récupérer les publications d'un voyage publié par ID
@@ -241,6 +253,7 @@ const getLikesByPostId = async (req, res) => {
     return res.status(500).json({ message: 'Erreur serveur' });
   }
 };
+
 
 
 

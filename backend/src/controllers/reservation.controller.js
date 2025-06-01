@@ -1,4 +1,4 @@
-const { Reservation, Utilisateur, Publication } = require('../models');
+const { Reservation, Utilisateur, Publication, Vol,Hotel } = require('../models');
 const reservationService = require('../services/reservation.service');
 //const Upload = require('../middlewares/upload.middleware');
 const fs = require('fs'); // Ajout pour la gestion des fichiers temporaires
@@ -22,33 +22,64 @@ exports.createReservation = async (req, res) => {
 
     console.log("📄 Fichiers après traitement:", { piece_identite, passeport });
 
+    // Construction des URLs complètes
+    const baseUrl = `${req.protocol}://${req.get('host')}/images/`;
+    const piece_identiteUrl = piece_identite ? baseUrl + piece_identite : null;
+    const passeportUrl = passeport ? baseUrl + passeport : null;
+
     // Vérification des champs obligatoires
-    if (!bodyData.id_utilisateur || !bodyData.id_publication || bodyData.nombre_adultes == null) {
-      console.warn("⚠️ Champs obligatoires manquants !");
-      return res.status(400).json({
-        success: false,
-        message: "Champs manquants : id_utilisateur, id_publication ou nombre_adultes."
-      });
-    }
+   if (!bodyData.id_utilisateur || bodyData.nombre_adultes == null || 
+    (!bodyData.id_publication && !bodyData.id_vol && !bodyData.id_hotel)) {
+  return res.status(400).json({
+    success: false,
+    message: "Champs manquants : id_utilisateur, nombre_adultes, et au moins une cible de réservation (publication, vol ou hôtel)."
+  });
+}
+
+
 
     // Vérification de l'existence de l'utilisateur et de la publication
-    const [utilisateur, publication] = await Promise.all([
-      Utilisateur.findByPk(bodyData.id_utilisateur),
-      Publication.findByPk(bodyData.id_publication)
-    ]);
+    // Vérification de l'existence de l'utilisateur, publication, vol et hôtel
+const [
+  utilisateur,
+  publication,
+  vol,
+  hotel
+] = await Promise.all([
+  Utilisateur.findByPk(bodyData.id_utilisateur),
+  bodyData.id_publication ? Publication.findByPk(bodyData.id_publication) : Promise.resolve(null),
+  bodyData.id_vol ? Vol.findByPk(bodyData.id_vol) : Promise.resolve(null),
+  bodyData.id_hotel ? Hotel.findByPk(bodyData.id_hotel) : Promise.resolve(null),
+]);
 
-    if (!utilisateur) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Utilisateur introuvable." 
-      });
-    }
-    if (!publication) {
-      return res.status(404).json({ 
-        success: false,
-        message: "Publication introuvable." 
-      });
-    }
+if (!utilisateur) {
+  return res.status(404).json({ 
+    success: false,
+    message: "Utilisateur introuvable." 
+  });
+}
+
+if (bodyData.id_publication && !publication) {
+  return res.status(404).json({ 
+    success: false,
+    message: "Publication introuvable." 
+  });
+}
+
+if (bodyData.id_vol && !vol) {
+  return res.status(404).json({ 
+    success: false,
+    message: "Vol introuvable." 
+  });
+}
+
+if (bodyData.id_hotel && !hotel) {
+  return res.status(404).json({ 
+    success: false,
+    message: "Hôtel introuvable." 
+  });
+}
+
 
     // Création de la réservation
     const reservation = await Reservation.create({
@@ -63,8 +94,8 @@ exports.createReservation = async (req, res) => {
       type_chambre: bodyData.type_chambre || null,
       ville_residence: bodyData.ville_residence,
       nationalite: bodyData.nationalite,
-      piece_identite,
-      passeport
+      piece_identite: piece_identiteUrl, // Stockez maintenant l'URL complète
+      passeport: passeportUrl // Stockez maintenant l'URL complète
     });
 
     console.log("✅ Réservation créée avec succès:", reservation.toJSON());
@@ -75,8 +106,8 @@ exports.createReservation = async (req, res) => {
       data: {
         id: reservation.id,
         documents: {
-          piece_identite: !!piece_identite,
-          passeport: !!passeport
+          piece_identite: piece_identiteUrl, // Renvoyez l'URL complète
+          passeport: passeportUrl
         }
       }
     });

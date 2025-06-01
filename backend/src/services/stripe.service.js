@@ -16,16 +16,20 @@ exports.createCheckoutSession = async (paymentData) => {
       success_url: paymentData.success_url,
       cancel_url: paymentData.cancel_url,
       customer_email: paymentData.customer_email,
-      metadata: {  // <-- Ceci est essentiel
+      metadata: {
         paiementId: paymentData.paiementId.toString(),
-        reservationId: paymentData.reservationId.toString()
-      },
-      payment_intent_data: {  // Double sécurité
-        metadata: {
+        ...(paymentData.reservationId && { reservationId: paymentData.reservationId.toString() }),
+        ...(paymentData.idAssurance && { idAssurance: paymentData.idAssurance.toString() })
+      }
+      ,
+      payment_intent_data: {
+        metadata: { 
           paiementId: paymentData.paiementId.toString(),
-          reservationId: paymentData.reservationId.toString()
+          ...(paymentData.reservationId && { reservationId: paymentData.reservationId.toString() }),
+          ...(paymentData.idAssurance && { idAssurance: paymentData.idAssurance.toString() })
         }
       }
+
     });
 
     console.log('Session créée avec metadata:', session.metadata); // Log de vérification

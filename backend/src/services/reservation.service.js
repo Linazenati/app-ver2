@@ -1,5 +1,5 @@
 // services/reservation.service.js
-const { Reservation, Utilisateur_inscrit,Utilisateur, Publication,Voyage,Omra  } = require('../models');
+const { Reservation, Utilisateur_inscrit,Utilisateur, Publication,Voyage,Omra,Hotel,Vol  } = require('../models');
 const { Op } = require("sequelize");
 
 const createReservation = async (data) => {
@@ -24,7 +24,7 @@ const getAllReservations = async ({
     whereClause.type = type;
   }
 
-  const reservations = await Reservation.findAndCountAll({
+ const reservations = await Reservation.findAndCountAll({
   where: whereClause,
   include: [
     { 
@@ -58,12 +58,25 @@ const getAllReservations = async ({
           attributes: ['id', 'titre', 'description', 'date_de_depart', 'date_de_retour', 'prix']
         }
       ]
+    },
+    {
+      model: Hotel,
+      as: 'hotel',
+      required: false,
+      attributes: ['id', 'name', 'adresse', 'ville', 'region', 'Note_moyenne']
+    },
+    {
+      model: Vol,
+      as: 'vol',
+      required: false,
+      attributes: ['numero_vol', 'compagnie_aerienne', 'aeroport_depart', 'aeroport_arrivee', 'duree', 'prix', 'devise']
     }
   ],
   limit: parseInt(limit),
   offset: parseInt(offset),
   order: [[orderBy, orderDir]]
 });
+
 
 return reservations;
 

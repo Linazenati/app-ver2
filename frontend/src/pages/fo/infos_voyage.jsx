@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import voyageService from "../../services-call/voyage";
+import publicationService from "../../services-call/publication"; 
 import { Spin, Card, Tabs, Divider, Typography, Row, Col, Tag } from "antd";
 import {
   InfoCircleOutlined,
@@ -17,10 +18,12 @@ const { Title, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 const Infos_Voyage = () => {
-  const { id } = useParams();
+ const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [voyage, setVoyage] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [publicationId, setPublicationId] = useState(null);
   useEffect(() => {
     const fetchVoyage = async () => {
       try {
@@ -29,7 +32,16 @@ const Infos_Voyage = () => {
         console.log("Réponse backend :", response);
       const { voyage, commentairesSocial } = response.data;
 
+        
+        // Récupérer les données du voyage et les publications en parallèle
+        const [voyageResponse, publicationsResponse] = await Promise.all([
+          voyageService.getVoyagePublieAvecCommentaires(id),
+          publicationService.getPublicationsByVoyageId(id) // Récupération des publications
+        ]);
 
+        const publications = publicationsResponse.data;
+
+        // Traitement des données comme avant...
         let programme = [];
         let excursions = [];
         let conditions = [];
@@ -53,15 +65,42 @@ const Infos_Voyage = () => {
         }
 
         setVoyage({ ...voyage, programme, excursions, conditions });
+        
+        // Si des publications existent, prendre la première
+        if (publications.length > 0) {
+          setPublicationId(publications[0].id);
+        }
+
+        // Vérifier si un publicationId est déjà présent dans l'URL
+        const urlPublicationId = searchParams.get('publicationId');
+        if (urlPublicationId) {
+          console.log('Publication ID depuis URL:', urlPublicationId);
+          // Faire quelque chose avec cet ID si nécessaire
+        }
       } catch (error) {
         console.error("Erreur lors de la récupération du voyage :", error);
+        message.error("Erreur lors du chargement du voyage");
       } finally {
         setLoading(false);
       }
     };
 
     fetchVoyage();
-  }, [id]);
+  }, [id, searchParams]);
+
+  const handleReservation = () => {
+    if (publicationId) {
+      // Naviguer vers la même page avec l'ID de publication dans l'URL
+      navigate(`/web/Reservation/${publicationId}`);
+      // Vous pouvez aussi rediriger vers une page de réservation spécifique
+      // navigate(`/web/reservation/${id}?publicationId=${publicationId}`);
+      
+      // Afficher un message ou ouvrir un modal de réservation
+      message.info(`Réservation en cours pour la publication ${publicationId}`);
+    } else {
+      message.warning("Aucune publication disponible pour ce voyage");
+    }
+  };
 
   if (loading) return <Spin tip="Chargement..." />;
   if (!voyage) return <p>Voyage introuvable.</p>;
@@ -361,23 +400,20 @@ const Infos_Voyage = () => {
   <Paragraph>
     Réservez votre voyage et bénéficiez de notre accompagnement complet.
   </Paragraph>
-  <button
-    style={{
-      backgroundColor: "#1890ff",
-      color: "white",
-      border: "none",
-      padding: "10px 20px",
-      borderRadius: "5px",
-      cursor: "pointer",
-      fontSize: "16px",
-    }}
-    onClick={() => {
-      // Logique pour la réservation, redirection ou ouverture d'un formulaire
-      alert("Réservation en cours...");
-    }}
-  >
-    Réserver maintenant
-  </button>
+ <button
+          style={{
+            backgroundColor: "#1890ff",
+            color: "white",
+            border: "none",
+            padding: "10px 20px",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontSize: "16px",
+          }}
+          onClick={handleReservation} // Utilisation de la nouvelle fonction
+        >
+          Réserver maintenant
+        </button>
 </div>
     </div>
   );

@@ -96,11 +96,16 @@ const ChoixPaiement = () => {
 
             } catch (error) {
                 console.error("Erreur lors de la création du lien de paiement :", error);
+                console.error('Erreur Axios :', error.response?.data || error.message);
                 alert("Une erreur est survenue lors de la création du lien de paiement.");
             }
         } else if (formData.methodePaiement === "international") {
             try {
-                const response = await stripeService.initiatePayment(reservationId, token);
+                const paymentData = {
+                    assuranceId: null,
+                    reservationId: reservationId // explicitement null si non utilisé
+                };
+                const response = await stripeService.initiatePayment(paymentData, token);
                 const paymentLink = response.data.lien_paiement;
 
                 if (paymentLink) {
@@ -111,6 +116,7 @@ const ChoixPaiement = () => {
 
             } catch (error) {
                 console.error("Erreur lors de l'initialisation du paiement Stripe :", error);
+                console.error('Erreur Axios :', error.response?.data || error.message);
                 alert("Une erreur est survenue lors du paiement international.");
             }
 

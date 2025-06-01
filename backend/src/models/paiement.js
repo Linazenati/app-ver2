@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
     foreignKey: 'id_reservation',
     as: 'reservation'
     });
+     Paiement.belongsTo(models.Assurance, {
+    foreignKey: 'id_assurance',
+    as: 'assurance' // ✅ alias pour accéder à l'assurance liée à un paiement
+  });
     }
   }
   Paiement.init({
@@ -21,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     methode_paiement: DataTypes.STRING,
     statut: DataTypes.STRING,
     lien_paiement: DataTypes.STRING,
+     id_assurance: DataTypes.INTEGER,
     id_reservation: DataTypes.INTEGER
   }, {
     sequelize,

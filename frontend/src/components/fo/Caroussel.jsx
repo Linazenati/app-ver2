@@ -42,16 +42,18 @@ const Caroussel = () => {
             title={dernierVoyage?.titre || "Voyage Inconnu"}
             content={dernierVoyage?.description || "Découvrez votre prochaine aventure"}
             active={true}
+            lien="/web/Voyage"
           />
 
           {/* 🥈 Deuxième carrousel - Fixe */}
-         <CarousselItem
-  nom="Notre Prochain Omra"
-  img={imgCarousel2}  // Remplace imgCarousel2 par une image en rapport avec l'Omra
-  title="Voyages & Pèlerinages"
-  content="Partez en Omra avec nous pour une expérience spirituelle unique"
-  active={false}  // Mettre à true si c'est l'élément actif, sinon false
-/>
+          <CarousselItem
+            nom="Notre Prochaine Omra"
+            img={imgCarousel2}
+            title="Voyages & Pèlerinages"
+            content="Partez en Omra avec nous pour une expérience spirituelle unique"
+            active={false}
+            lien="/web/Omra"
+          />
         </div>
 
         <button className="carousel-control-prev" type="button" data-bs-target="#header-carousel" data-bs-slide="prev">

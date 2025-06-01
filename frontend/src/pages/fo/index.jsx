@@ -19,14 +19,19 @@ import Connexion from "./Connexion"
 import Inscription from "./Inscription"
 import Mon_espace from "./Mon-espace"
 import Reservation from "./Reservation"
+import Reservation1 from "./Reservation1"
+
 import Conditions from "./Conditions"
 import ChoixPaiement from "./ChoixPaiement"
+import ChoixPaiement1 from "./ChoixPaiement1"
 import Voyage from "./list-voyages"
 import Infos_Voyage from "./infos_voyage"
 import Contact from "./contact"
+
 import Hotels from "./liste-hotels"
 import InfosHotel from "./infos_hotel"
 
+import Resultat_vols from "./resultat-vols"
 import "../../assets/fo/css/style.min.css"
 
 const Index = () => {
@@ -85,6 +90,8 @@ const Index = () => {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/vols" element={<Vols />} />
+        <Route path="/vols/resultat" element={<Resultat_vols />} />
+        <Route path="/visaDetudes" element={<Visadetudes />} />
         <Route path="/visaTouristique" element={<VisaTouristique />} />
         <Route path="/omra" element={<Omra />} />
         <Route path="/Infos_omra1/:id" element={<Infos_omra1 />} />
@@ -92,7 +99,10 @@ const Index = () => {
         <Route path="/inscription" element={<Inscription />} />
         <Route path="/Mon_espace" element={<Mon_espace />} />
         <Route path="/Reservation/:id" element={<Reservation />} />
+                <Route path="/Reservation1/:id" element={<Reservation1 />} />
+
         <Route path="/Reservations/:id/choix-paiement" element={<ChoixPaiement />} />
+        <Route path="/Reservations/:idAssurance/choix-paiement1" element={<ChoixPaiement1 />} />
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/Conditions" element={<Conditions />} />
         <Route path="/voyage" element={<Voyage />} />

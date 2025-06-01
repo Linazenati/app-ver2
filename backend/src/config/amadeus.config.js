@@ -2,8 +2,8 @@
 const Amadeus = require('amadeus');
 
 const amadeus = new Amadeus({
-  clientId: '0UT5R6CZ7NKCJTlQAPLl5UD4Oj7JRUsQ',
-  clientSecret: 'ULtxKGirAGRleoLI'
+  clientId: 'd3GiQnnylg4qPU8cRhY1mpsq0b7xL0Az',
+  clientSecret: 'x07yhsV5SHTdu60A'
 });
 
 module.exports = amadeus;

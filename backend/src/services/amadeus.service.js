@@ -9,6 +9,7 @@ async function rechercherVols({
   nonStop,
   max,
   travelClass
+  
 }) {
   try {
     // Appel à l'API Amadeus avec les paramètres fournis

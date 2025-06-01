@@ -2,8 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const path = require('path');
 
 app.use(cors());
+app.use('/images', express.static(path.join(__dirname, 'src', 'public', 'images')));
 
 // Webhook Facebook
 const VERIFY_TOKEN = "1234"; 

@@ -8,7 +8,8 @@ const uploadMiddleware = (req, res, next) => {
   console.log('Middleware upload appelé');
   upload.fields([
     { name: 'piece_identite', maxCount: 1 },
-    { name: 'passeport', maxCount: 1 }
+    { name: 'passeport', maxCount: 1 },
+    { name: 'documents', maxCount: 5 }
   ])(req, res, (err) => {
     if (err) {
       console.error('Erreur dans le middleware upload:', err);
