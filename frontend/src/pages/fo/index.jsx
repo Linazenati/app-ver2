@@ -11,11 +11,9 @@ import Footer from"../../components/fo/Footer"
 
 import Home from "./Home";
 import Vols from "./Vols";
-import Visadetudes from "./Visadetudes";
 import VisaTouristique from "./VisaTouristique";
 import Omra from "./Omra";
 import Infos_omra1 from "./Infos_omra1"
-import VoyageOrganisés from "./VoyagesOrganisés"
 import Assurance from "./Assurance"
 import Connexion from "./Connexion"
 import Inscription from "./Inscription"
@@ -87,11 +85,9 @@ const Index = () => {
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/vols" element={<Vols />} />
-        <Route path="/visaDetudes" element={<Visadetudes />} />
         <Route path="/visaTouristique" element={<VisaTouristique />} />
         <Route path="/omra" element={<Omra />} />
         <Route path="/Infos_omra1/:id" element={<Infos_omra1 />} />
-        <Route path="/voyagesOrganisés" element={<VoyageOrganisés />} />
         <Route path="/assurance" element={<Assurance />} />
         <Route path="/inscription" element={<Inscription />} />
         <Route path="/Mon_espace" element={<Mon_espace />} />
@@ -102,7 +98,7 @@ const Index = () => {
         <Route path="/voyage" element={<Voyage />} />
         <Route path="/infos_voyage/:id"  element={<Infos_Voyage/>}/>
          <Route path="/contact" element={<Contact />} />
-        <Route path="/hotel/:ville" element={<Hotels />} />
+        <Route path="/hotel/:villeId" element={<Hotels />} />
         <Route path="/infos_hotel/:id"  element={<InfosHotel/>}/>
         <Route path="/contact" element={<Contact />} />
       </Routes>

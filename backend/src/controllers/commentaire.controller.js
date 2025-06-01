@@ -37,6 +37,11 @@ const partagerCommentaire = async (req, res) => {
 const    updateSelectionCommentaire= async (req, res) => {
   try {
     const { id_commentaire_plateforme, plateforme, est_selectionne } = req.body;
+
+    if (!id_commentaire_plateforme || !plateforme || est_selectionne === undefined) {
+      return res.status(400).json({ message: "Champs manquants ou invalides" });
+    }
+
     const commentaire = await commentaireService.mettreAJourSelection(id_commentaire_plateforme, plateforme, est_selectionne);
     return res.status(200).json({ message: 'Statut mis à jour', commentaire });
   } catch (error) {
@@ -59,8 +64,46 @@ const getCommentairesSelectionnes = async (req, res) => {
   }
 };
 
+
+const getCommentairesInstagram = async (req, res) => {
+  try {
+        const id_publication = req.params.id_publication;
+
+    const commentaires = await  commentaireService.getCommentairesInstagramParVoyage(id_publication);
+    res.status(200).json(commentaires);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getCommentairesFacebook = async (req, res) => {
+  try {
+    const id_publication = req.params.id_publication;
+    const commentaires = await commentaireService.getCommentairesFacebookParVoyage(id_publication);
+    res.status(200).json(commentaires);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+const getNouveauxCommentaires = async (req, res) => {
+  const id_publication = req.params.id_publication;
+
+  try {
+    const commentaires = await commentaireService.getNouveauxCommentaires(id_publication);
+    res.json(commentaires);
+  } catch (error) {
+    console.error("❌ Erreur récupération nouveaux commentaires :", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+};
 module.exports = {
   partagerCommentaire,
     updateSelectionCommentaire,
-  getCommentairesSelectionnes
+  getCommentairesSelectionnes,
+  getCommentairesInstagram,
+  getCommentairesFacebook,
+  getNouveauxCommentaires
 };

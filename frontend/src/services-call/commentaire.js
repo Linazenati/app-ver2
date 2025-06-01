@@ -14,6 +14,23 @@ const commentaireService = {
   // 📥 Récupérer les commentaires sélectionnés selon la plateforme (GET /commentaires/partager?plateforme=instagram)
   getCommentairesSelectionnes: (plateforme) =>
     api.get(`${API_POINT}/partager`, { params: { plateforme } }),
+
+
+
+
+ getCommentairesFacebook: (id_publication) =>
+  api.get(`${API_POINT}/facebook/${id_publication}`),
+
+getCommentairesInstagram: (id_publication) =>
+    api.get(`${API_POINT}/instagram/${id_publication}`),
+  
+
+//recuperer les  noveau commentaire 
+getNouveauxCommentaires: (id_publication) =>
+  api.get(`${API_POINT}/nouveaux/${id_publication}`),
+
 };
+
+
 
 export default commentaireService;

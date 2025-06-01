@@ -16,7 +16,7 @@ const facebookService = {
     api.post(`${API_POINT}/notifications/reset`),
 
   // Récupérer tous les likes d'une publication Facebook par son ID
-  getLikesByPublication: (id_post_facebook) =>
+  recupererLikesPublication: (id_post_facebook) =>
     api.get(`${API_POINT}/${id_post_facebook}/likes`),
 
   // Supprimer un commentaire par son ID

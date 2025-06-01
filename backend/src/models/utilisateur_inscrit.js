@@ -9,7 +9,16 @@ module.exports = (sequelize, DataTypes) => {
       Utilisateur_inscrit.belongsTo(models.Utilisateur,
         {
           foreignKey: 'id',
-          as: 'utilisateur'});  // clé étrangère 
+          as: 'utilisateur'
+        });  // clé étrangère
+    
+    // Utilisateur_inscrit a plusieurs Visa (une demande de visa appartient à un utilisateur inscrit)
+      Utilisateur_inscrit.hasMany(models.Visa, {
+        foreignKey: 'utilisateurInscritId',
+        as: 'visas',
+        onDelete: 'CASCADE'
+      });
+
          
     Utilisateur_inscrit.hasOne(models.Client,
       {

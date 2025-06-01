@@ -37,11 +37,10 @@ export default function CreerOmra() {
     formData.append("description", values.description);
     formData.append("prix", values.prix);
     formData.append("date_de_depart", values.date_de_depart.format("YYYY-MM-DD"));
-    formData.append("duree", values.duree);
     formData.append("image", imageFile);
 
     omraService
-      .createItem(formData)
+      .create(formData)
       .then((res) => {
         const id = res.data?.id || res.data?.insertId; // selon ton backend
         if (id) {
@@ -75,15 +74,8 @@ export default function CreerOmra() {
   return (
     <>
       <Toaster position="top-right" reverseOrder={false} />
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <h2 style={{ margin: 0 }}>Créer une Omra</h2>
+       <div className="flex justify-between items-center mb-6">
+        <h2 style={{ textAlign: 'center' ,  color: '#05396d'}}>Créer une Omra</h2>
       </div>
 
       <Form
@@ -108,9 +100,7 @@ export default function CreerOmra() {
         >
           <DatePicker style={{ width: "100%" }} />
         </Form.Item>
-        <Form.Item name="duree" label="Durée (jours)" rules={[{ required: true }]}>
-          <InputNumber min={1} style={{ width: "100%" }} />
-        </Form.Item>
+    
         <Form.Item name="image" label="Image">
           <Upload {...propsUpload}>
             <Button icon={<UploadOutlined />}>Télécharger une image</Button>
@@ -124,7 +114,7 @@ export default function CreerOmra() {
           )}
         </Form.Item>
         <Form.Item>
-          <Button type="primary" htmlType="submit" block>
+          <Button  type="primary" htmlType="submit" block>
             Créer Omra
           </Button>
         </Form.Item>
@@ -153,21 +143,32 @@ export default function CreerOmra() {
 
               try {
                 // Publier sur toutes les plateformes sélectionnées (site, Facebook, Instagram)
-                const res = await publicationService.publierMulti(
+                const res = await publicationService.publiermultiOmra(
                   createdVoyageId,
                   mappedPlatforms,
                   "omra"
                 );
                 console.log("Résultat publication :", res.data);
-                toast.success("🎉 Publication réussie !");
+
+                const resultats = res.data.resultats;
+
+                // 🔁 Affichage toast pour chaque plateforme
+                Object.entries(resultats).forEach(([platform, result]) => {
+                  if (result?.error) {
+                    toast.error(`Échec de publication sur ${platform} : ${result.error}`);
+                  } else {
+                    toast.success(`Publication réussie sur ${platform}`);
+                  }
+                });
+              
               } catch (err) {
-                console.error(err);
-                toast.error("❌ Erreur lors de la publication !");
-              } finally {
-                setModalVisible(false);
+                console.error("Erreur publication multiple :", err.message);
+                toast.error("Erreur globale lors de la publication");
               }
-            }}
-          >
+  
+
+          
+            }} >
             Publier
           </Button>,
         ]}

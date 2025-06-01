@@ -40,6 +40,8 @@ const ListePublications = () => {
     fetchPublications();
   }, [search, platformFilter, orderBy, orderDir, limit, offset ,serviceFilter,]);
 
+
+  
   const handleSort = (column) => {
     if (orderBy === column) {
       setOrderDir(orderDir === "ASC" ? "DESC" : "ASC");

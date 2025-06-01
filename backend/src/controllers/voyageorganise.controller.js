@@ -6,7 +6,6 @@ const publicationService = require('../services/publication.service');
 
 
 
-
 // ✅ Créer un voyage
 const create = async (req, res) => {
 
@@ -148,6 +147,12 @@ const publishToSite = async (voyageId) => {
       return res.status(404).json({ message: "Voyage non trouvé" });
     }
 
+
+    const now = new Date();
+if (new Date(voyage.date_de_depart) < now) {
+  console.warn("❌ La date de départ est déjà passée. Impossible de publier.");
+  return { message: "Impossible de publier : la date de départ est déjà passée." };
+    }
     // 2. Vérifier si publication Facebook existe déjà
     const publicationExistante = await publicationService.getByPlatformAndVoyage('site', voyageId);
     if (publicationExistante) {

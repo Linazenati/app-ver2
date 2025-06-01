@@ -289,7 +289,8 @@ const Liste_voyages = () => {
         <ModalPublicationVoyage
           visible={showModal}
           onClose={handleCloseModal}
-          voyage={selectedVoyage}
+            voyage={selectedVoyage}
+            omra={null}
           successMessages={successMessages}
           errorMessages={errorMessages}
           onPublished={handleVoyagePublished}

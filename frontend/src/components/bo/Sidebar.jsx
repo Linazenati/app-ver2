@@ -34,32 +34,7 @@ function Sidebar() {
       ],
     },
     
-  {
-  title: "Réseaux Sociaux",
-  icon: "fas fa-share-alt",
-  links: [
-    {
-      title: "Facebook",
-      icon: "fab fa-facebook",
-      className: "facebook", // Ajout de la classe spécifique pour Facebook
-      links: [
-        { to: "/web/Connexion", label: "Publier sur Facebook", icon: "fab fa-facebook-square" },
-        { to: "/admin/facebook/commentaires", label: "Commentaires & Likes", icon: "fas fa-comments" },
-        { to: "/admin/facebook/supprimer-publication", label: "Supprimer une pub", icon: "fas fa-trash-alt" },
-      ]
-    },
-    {
-      title: "Instagram",
-      icon: "fab fa-instagram",
-      className: "instagram", // Ajout de la classe spécifique pour Instagram
-      links: [
-        { to: "/admin/instagram/publier", label: "Publier sur Instagram", icon: "fab fa-instagram" },
-        { to: "/admin/instagram/commentaires", label: "Commentaires & Likes", icon: "fas fa-comments" },
-        { to: "/admin/instagram/supprimer-publication", label: "Supprimer une pub", icon: "fas fa-trash-alt" },
-      ]
-    },
-  ]
-},
+  
 
     {
       title: "Réservations",
@@ -73,10 +48,25 @@ function Sidebar() {
       title: "Visa",
       icon: "fas fa-passport",
       links: [
-        { to: "/admin/demandes-visa", label: "Demandes de visa", icon: "fas fa-id-card" },
-        { to: "/admin/traiter-visa", label: "Traiter une demande", icon: "fas fa-check-circle" },
+        { to: "/admin/liste-visa", label: "Liste des visas", icon: "fas fa-id-card" },
       ],
     },
+   {
+  title: "Hotel",
+  icon: "fas fa-hotel",  // Icône hôtel classique pour la section principale
+  links: [
+    {
+      to: "/admin/liste-ville",
+      label: "Liste des villes",
+      icon: "fas fa-city"  // Icône ville / urbain pour liste des villes
+    },
+    {
+      to: "/admin/ajouter-ville",
+      label: "Ajouter une ville pour les hotels",
+      icon: "fas fa-plus-circle"  // Icône plus pour ajouter une ville
+    },
+  ],
+},
     {
       title: "Utilisateurs",
       icon: "fas fa-users",
@@ -97,7 +87,6 @@ function Sidebar() {
       title: "Paramètres",
       icon: "fas fa-cogs",
       links: [
-        { to: "/admin/configuration-site", label: "Configuration du site", icon: "fas fa-cogs" },
         { to: "/admin/securite", label: "Sécurité & Accès", icon: "fas fa-shield-alt" },
       ],
     },

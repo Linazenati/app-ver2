@@ -76,8 +76,8 @@ const OmraProgram = () => {
 
     const [idPub, setIdPub] = useState(0);
 
-    const getListPublications = async (idOmra) => {
-        const listPublications = await publicationService.getByIdOmra(idOmra);
+    const getListPublications = async (id) => {
+        const listPublications = await publicationService.getPublicationsByOmraId(id);
 
         // console.log("=========================================\n")
         // console.log(listPublications)

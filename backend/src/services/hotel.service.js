@@ -1,303 +1,187 @@
 const { Hotel } = require('../models'); // adapte le chemin selon ta structure
+const { Ville } = require('../models');
 const axios = require("axios");
-const service = {}
+const { Op , Sequelize } = require("sequelize");
 
-const VILLES_IDS = {
-//algérie
-    "Alger": "-458371",
-    "Béjaia": "-460532",
-    "Oran": "-480007",
-    "Annaba": "-458855",
-    "Sétif": "-484254",
-    "Canstantine": "-464717",
-    "jijel": "-472986",
-    "Skikda": "-486422",
-    "Tlemcen": "-490290",
-    "Mostaganem":"-478790",
+const service = {};
 
-//tunis
-    "Tunis" : "-731701",
-    "Hammamet": "-722356",
-    "Sousse": "-731250",
-    "Monastir": "-728914",
-    " Mahdia": "-722531",
-    "Tozeur": "-731519",
-    
-//dans le monde
-    "Paris": "-1456928",
-    "Marseille": "-1449947",
-    "montréal":"-569541",
-    "Istanbul":"-755070",
-    "London": "-2601889",
-    "Barcelona": "-372490",
-    "Valence": "-1474436",
-    "Venise": "-132007 ",
-    "Dubai":"-782831",
-    "Makka": "-3096949",
-    "Medina": "-3092186",
-
-
-}
-
-const VILLES_REGIONS = {
-  "Alger": "Algérie",
-  "Béjaia": "Algérie",
-  "Oran": "Algérie",
-  "Annaba": "Algérie",
-  "Sétif": "Algérie",
-  "Canstantine": "Algérie",
-  "jijel": "Algérie",
-  "Skikda": "Algérie",
-   "Tlemcen": "Algérie",
-  "Mostaganem": "Algérie",
-  
-  "Tunis": "Tunisie",
-  "Hammamet": "Tunisie",
-  "Sousse": "Tunisie",
-  "Monastir": "Tunisie",
-  "Mahdia": "Tunisie",
-  "Tozeur": "Tunisie",
-  
-  "Paris": "Monde",
-  "Marseille": "Monde",
-  "montréal": "Monde",
-  "Istanbul": "Monde",
-  "London": "Monde",
-  "Barcelona": "Monde",
-  "Valence": "Monde",
-  "Venise": "Monde",
-  "Dubai": "Monde",
-  "Makka": "Monde",
-  "Medina": "Monde",
-};
-const URL_BOOKING_COM = "https://booking-com15.p.rapidapi.com/api/v1/hotels/searchHotels"
-const OPTIONAL_PARAMS = "&page_number=1&units=metric&temperature_unit=c&languagecode=fr&currency_code=EUR&location=US"
+const URL_BOOKING_COM = "https://booking-com15.p.rapidapi.com/api/v1/hotels/searchHotels";
+const OPTIONAL_PARAMS = "&page_number=1&units=metric&temperature_unit=c&languagecode=fr&currency_code=EUR&location=US";
 
 const options = {
-	method: 'GET',
-	headers: {
-		'x-rapidapi-key': '6761c199f8msh08da520f135ee89p129be6jsn149a961b3909',
-		'x-rapidapi-host': 'booking-com15.p.rapidapi.com'
-	}
-};
-const  EUR_TO_DZD = 149.74; 
-
-service.find = async (ville, arrival_date, departure_date, nbr_chambre, nbr_adulte,age_enfants) => {
-    const data = null;
-
-    const dest_id = VILLES_IDS[ville];
-    if (!dest_id) {
-        console.error(`Ville inconnue ou non supportée: ${ville}`);
-        return [];
-    }
-    const region = VILLES_REGIONS[ville] || "Monde";
-
-    // Si aucun âge n'est fourni, on envoie une chaîne vide
-      if (!age_enfants) {
-        age_enfants = [];
-    } else if (typeof age_enfants === 'string') {
-        age_enfants = age_enfants.split(',').map(a => a.trim()).filter(a => a !== '');
-    } else if (!Array.isArray(age_enfants)) {
-        age_enfants = [];
-    }
-    const encodedChildrenAges = encodeURIComponent(age_enfants.length > 0 ? age_enfants.join(',') : '');    
-    const url = URL_BOOKING_COM
-        + `?dest_id=${dest_id}&search_type=CITY&arrival_date=${arrival_date}&departure_date=${departure_date}&room_qty=${nbr_chambre}&adults=${nbr_adulte}&children_age=${encodedChildrenAges}`
-        + OPTIONAL_PARAMS;
-    
-
-    const response = await fetch(url, options);
-    const result = await response.json();
-
-console.log("API response:", JSON.stringify(result, null, 2)); // <--- Debug
-
-    const hotels = (
-        (result.data && result.data.data && result.data.data.hotels) ||
-        (result.data && result.data.hotels) ||
-        result.hotels ||
-        []
-    );
- const filteredHotels = hotels
-        .filter(hotel => {
-            const label = hotel.accessibilityLabel?.toLowerCase() || "";
-            const isHotel = label.includes("hotel") || label.includes("hôtel") ||   label.includes("Hotel") ||  label.includes("Hôtel");
-            const isNotOther = !label.includes("appartement") &&
-                !label.includes("résidence") &&
-                !label.includes("villa") &&
-                !label.includes("maison") &&
-                !label.includes("studio");
-            return isHotel && isNotOther;
-        })
-        .map(hotel => {
-            const priceEUR = hotel.property?.priceBreakdown?.grossPrice?.value || null;
-            const label = hotel.accessibilityLabel || "";
-            const starsMatch = label.match(/(\d+)\s+étoile(?:s)?\s+sur\s+5/i);
-            const stars = starsMatch ? parseInt(starsMatch[1], 10) : null;
-        return {
-            id: hotel.hotel_id,
-            nom: hotel.property?.name || hotel.accessibilityLabel?.split('\n')[0],
-             accessibilityLabel: label,
-             etoile: stars , // ⭐ Ajout ici
-            adresse: hotel.property?.wishlistName || hotel.accessibilityLabel?.split('\n')[0],
-            photos: hotel.property?.photoUrls?.slice(0, 3) || [],
-            prixEUR: priceEUR,
-            prixDZD: priceEUR ? (priceEUR * EUR_TO_DZD ).toFixed(2): null,
-            Note_moyenne: hotel.reviewScore || hotel.property?.reviewScore || null,
-            Appréciation: hotel.reviewScoreWord || hotel.property?.reviewScoreWord || null,  // Ajouté ici
-            Nombre_avis: hotel.reviewCount || hotel.property?.reviewCount || null,
-            Localisation: {
-                Latitude: hotel.property?.latitude || hotel.latitude || null,
-                Longitude: hotel.property?.longitude || hotel.longitude || null,
-            },
-             region: region
-
-        };
-    });
-
-    return filteredHotels;
-}
-
-
-
-
-
-
-service.saveHotelsInDB = async (hotelsArray, ville) => {
-      console.log(`Enregistrement de ${hotelsArray.length} hôtels pour la ville ${ville}`);
-    for (const h of hotelsArray) {
-      try {
-    await Hotel.upsert({
-      id: h.id,
-      name: h.nom,
-      ville: ville, // maintenant ville est bien défini
-      region: h.region,
-      adresse: h.adresse,
-      latitude: h.Localisation.Latitude,
-      longitude: h.Localisation.Longitude,
-      etoiles: h.etoile,
-      photos: h.photos,
-      Note_moyenne: h.Note_moyenne,
-      Appréciation: h.Appréciation,
-      Nombre_avis: h.Nombre_avis,
-    });
-      console.log(`Hotel ${h.nom} enregistré`);
-    } catch (error) {
-      console.error(`Erreur en enregistrant l'hôtel ${h.nom}:`, error.message);
-    }
+  method: 'GET',
+  headers: {
+    'x-rapidapi-key': '6761c199f8msh08da520f135ee89p129be6jsn149a961b3909',
+    'x-rapidapi-host': 'booking-com15.p.rapidapi.com'
   }
-}
+};
 
-service.saveAllHotels = async (arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants) => {
-  for (const ville of Object.keys(VILLES_IDS)) {
-    try {
-      console.log(`Récupération des hôtels pour ${ville}`);
-        const hotels = await service.find(ville, arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants);
-        console.log("🟡 Données envoyées à l'API externe :", {
+const EUR_TO_DZD = 149.74;
+
+// Récupérer toutes les villes pour le menu
+service.getallVilles = async (region) => {
+  const whereClause = region ? { region } : {};
+  return await Ville.findAll({ where: whereClause, order: [['nom', 'ASC']] });
+};
+
+// Récupérer les hôtels par ville quand on clique sur une ville
+service.findHotelsByVilleId = async (villeId) => {
+  return await Hotel.findAll({
+    where: { villeId: villeId }
+  });
+};
+
+// Recherche et sauvegarde des hôtels pour une ville spécifique
+service.searchAndSaveHotelsForVille = async function (
+  villeNom,
   arrival_date,
   departure_date,
-  adults: nbr_adulte,
-  room_qty: nbr_chambre,
+  nbr_chambre,
+  nbr_adulte,
   age_enfants
-});
-      if (hotels.length > 0) {
-        await service.saveHotelsInDB(hotels, ville);
-        console.log(`✔️ Enregistré ${hotels.length} hôtels pour ${ville}`);
-      } else {
-        console.log(`❌ Aucun hôtel trouvé pour ${ville}`);
-      }
-    } catch (err) {
-      console.error(`Erreur pour ${ville}:`, err.message);
-    }
+) {
+  const ville = await Ville.findOne({ where: { nom: villeNom } });
+  if (!ville || !ville.dest_id) throw new Error(`Ville non trouvée ou dest_id manquant : ${villeNom}`);
+
+  // Normalisation des âges enfants
+  if (!age_enfants) age_enfants = [];
+  else if (typeof age_enfants === "string") {
+    age_enfants = age_enfants.split(",").map(a => a.trim()).filter(a => a !== "");
+  } else if (!Array.isArray(age_enfants)) {
+    age_enfants = [];
   }
-}
 
+  const childrenAgesEncoded = encodeURIComponent(age_enfants.join(","));
+  const url =
+    `${URL_BOOKING_COM}?dest_id=${ville.dest_id}&search_type=CITY&arrival_date=${arrival_date}` +
+    `&departure_date=${departure_date}&room_qty=${nbr_chambre}&adults=${nbr_adulte}&children_age=${childrenAgesEncoded}` +
+    OPTIONAL_PARAMS;
 
-
-service.getHotelsFromDbByVille = async (ville) => {
-  return await Hotel.findAll({ where: { ville } });
-};
-
-
-
-service.getVillesByRegion = (region) => {
-  return Object.entries(VILLES_REGIONS)
-    .filter(([ville, reg]) => reg.toLowerCase() === region.toLowerCase())
-    .map(([ville]) => ville);
-}
-
-
-service.searchRealTimeAvailability = async (ville, arrival_date, departure_date, nbr_chambre, nbr_adulte, age_enfants) => {
-    const hotelsEnBase = await service.getHotelsFromDbByVille(ville);
-    const dest_id = VILLES_IDS[ville];
-
-    if (!dest_id) {
-        console.error(`Ville inconnue ou non supportée: ${ville}`);
-        return [];
-    }
-
-    // Traitement des enfants
-    if (!age_enfants) {
-        age_enfants = [];
-    } else if (typeof age_enfants === 'string') {
-        age_enfants = age_enfants.split(',').map(a => a.trim()).filter(a => a !== '');
-    } else if (!Array.isArray(age_enfants)) {
-        age_enfants = [];
-    }
-
-    const encodedChildrenAges = encodeURIComponent(age_enfants.length > 0 ? age_enfants.join(',') : '');
-
-    const url = URL_BOOKING_COM
-        + `?dest_id=${dest_id}&search_type=CITY&arrival_date=${arrival_date}&departure_date=${departure_date}&room_qty=${nbr_chambre}&adults=${nbr_adulte}&children_age=${encodedChildrenAges}`
-        + OPTIONAL_PARAMS;
-
+  try {
     const response = await fetch(url, options);
     const result = await response.json();
+    const hotels = result?.data?.data?.hotels || result?.data?.hotels || result?.hotels || [];
 
-    const hotels = (
-        (result.data && result.data.data && result.data.data.hotels) ||
-        (result.data && result.data.hotels) ||
-        result.hotels ||
-        []
-    );
-
-    // On garde seulement ceux déjà en DB
-    const filtered = hotels.filter(h => hotelsEnBase.some(dbHotel => dbHotel.id == h.hotel_id));
-
-    return filtered.map(hotel => {
-        const priceEUR = hotel.property?.priceBreakdown?.grossPrice?.value || null;
-        const label = hotel.accessibilityLabel || "";
+    const filteredHotels = hotels
+      .filter(h => {
+        const label = h.accessibilityLabel?.toLowerCase() || "";
+        return (
+          (label.includes("hotel") || label.includes("hôtel")) &&
+          !label.includes("appartement") &&
+          !label.includes("résidence") &&
+          !label.includes("villa") &&
+          !label.includes("maison") &&
+          !label.includes("studio")
+        );
+      })
+      .map(h => {
+        const label = h.accessibilityLabel || "";
         const starsMatch = label.match(/(\d+)\s+étoile(?:s)?\s+sur\s+5/i);
-        const stars = starsMatch ? parseInt(starsMatch[1], 10) : null;
+        const etoiles = starsMatch ? parseInt(starsMatch[1], 10) : null;
+        const priceEUR = h.property?.priceBreakdown?.grossPrice?.value || null;
+        const prixDZD = priceEUR ? (priceEUR * EUR_TO_DZD).toFixed(2) : null;
 
         return {
-            id: hotel.hotel_id,
-            nom: hotel.property?.name || hotel.accessibilityLabel?.split('\n')[0],
-            adresse: hotel.property?.wishlistName || label,
-            etoile: stars,
-            prixEUR: priceEUR,
-            prixDZD: priceEUR ? (priceEUR * EUR_TO_DZD).toFixed(2) : null,
-            Note_moyenne: hotel.reviewScore || hotel.property?.reviewScore || null,
-            Appréciation: hotel.reviewScoreWord || hotel.property?.reviewScoreWord || null,
-            Nombre_avis: hotel.reviewCount || hotel.property?.reviewCount || null,
-            photos: hotel.property?.photoUrls?.slice(0, 3) || [],
-            Localisation: {
-                Latitude: hotel.property?.latitude || hotel.latitude || null,
-                Longitude: hotel.property?.longitude || hotel.longitude || null,
-            }
+          id: h.hotel_id,
+          name: h.property?.name || label.split("\n")[0],
+          adresse: h.property?.wishlistName || label.split("\n")[0],
+          photos: h.property?.photoUrls?.slice(0, 3) || [],
+          prix_euro: priceEUR,
+          prix_dinare: prixDZD,
+          etoiles,
+          Note_moyenne: h.reviewScore || h.property?.reviewScore || null,
+          Appréciation: h.reviewScoreWord || h.property?.reviewScoreWord || null,
+          Nombre_avis: h.reviewCount || h.property?.reviewCount || null,
+          latitude: h.property?.latitude || h.latitude || null,
+          longitude: h.property?.longitude || h.longitude || null,
+          ville: ville.nom,
+          region: ville.region,
+          villeId: ville.id,
         };
-    });
+      });
+
+    for (const hotel of filteredHotels) {
+      try {
+        await Hotel.upsert(hotel);
+      } catch (err) {
+        console.error(`Erreur lors de l'insertion de ${hotel.name} :`, err.message);
+      }
+    }
+
+    return filteredHotels;
+  } catch (error) {
+    console.error("Erreur dans searchAndSaveHotelsForVille:", error.message);
+    return [];
+  }
 };
 
 
+
+const REGIONS_VALIDES = ['Monde', 'Algérie', 'Tunisie'];
+
+service.createVille = async (nom, region, dest_id) => {
+  if (!REGIONS_VALIDES.includes(region)) {
+    throw new Error(`Région invalide : ${region}`);
+  }
+  return await Ville.create({ nom, region, dest_id });
+};
+
+
+
+service.getVilleById = async (villeId) => {
+  return await Ville.findByPk(villeId);
+};
 
 
 service.getHotelById = async (id) => {
-  try {
-    const hotel = await Hotel.findByPk(id);
-    return hotel;
-  } catch (error) {
-    console.error("Erreur lors de la récupération de l'hôtel :", error.message);
-    return null;
-  }
+  return await Hotel.findByPk(id); // ou findOne({ where: { id } })
 };
+
+
+service.getAllVilles = async ({
+  search = '',
+  region,
+  limit = 50,
+  offset = 0,
+  orderBy = 'createdAt',
+  orderDir = 'ASC'
+}) => {
+  const whereClause = {};
+
+  // Filtre texte sur nom
+  if (search) {
+    whereClause.nom = { [Op.like]: `%${search}%` };
+  }
+
+  // Filtre région (si fournie et valide)
+  if (region && REGIONS_VALIDES.includes(region)) {
+    whereClause.region = region;
+  }
+
+  // Requête avec pagination, tri, filtre
+  const result = await Ville.findAndCountAll({
+    where: whereClause,
+    limit: parseInt(limit),
+    offset: parseInt(offset),
+    order: [[orderBy, orderDir]],
+    distinct: true
+  });
+
+  return {
+    data: result.rows,
+    total: result.count
+  };
+};
+
+service.deleteVilleById = async (id) => {
+  const ville = await Ville.findByPk(id);
+  if (!ville) {
+    throw new Error("Ville non trouvée");
+  }
+  await ville.destroy();
+  return true;
+};
+
+
+
 module.exports = service;

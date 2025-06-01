@@ -129,7 +129,7 @@ const handlePublish = async (createdVoyageId, platforms) => {
     <>
       <Toaster position="top-right" />
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Créer un Voyage</h2>
+        <h2 style={{ textAlign: 'center' ,  color: '#05396d'}}>Créer un Voyage</h2>
       </div>
 
       <Form

@@ -1,0 +1,5 @@
+.custom-modal-width {
+    max-width: 90% !important;
+    /* ou toute valeur que tu veux */
+    width: 90%;
+}

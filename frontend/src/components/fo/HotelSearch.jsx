@@ -5,18 +5,19 @@ import {
   FaBed,
   FaUser,
   FaChild,
-  FaSearch
+  FaSearch,
 } from "react-icons/fa";
 
-export default function HotelSearch({ ville, onSearch }) {
+export default function HotelSearch({ villeNom, destId, region, onSearch }) {
   const getLocalDate = (key, fallback) =>
     localStorage.getItem(key) || fallback;
 
-  const initArrivalDate = () => getLocalDate("arrivalDate", "2025-05-23");
-  const initDepartureDate = () => getLocalDate("departureDate", "2025-05-24");
-
-  const [arrivalDate, setArrivalDate] = useState(initArrivalDate);
-  const [departureDate, setDepartureDate] = useState(initDepartureDate);
+  const [arrivalDate, setArrivalDate] = useState(() =>
+    getLocalDate("arrivalDate", "2025-05-23")
+  );
+  const [departureDate, setDepartureDate] = useState(() =>
+    getLocalDate("departureDate", "2025-05-24")
+  );
   const [nbrChambre, setNbrChambre] = useState(1);
   const [nbrAdulte, setNbrAdulte] = useState(2);
   const [ageEnfants, setAgeEnfants] = useState("");
@@ -29,6 +30,20 @@ export default function HotelSearch({ ville, onSearch }) {
     localStorage.setItem("departureDate", departureDate);
   }, [departureDate]);
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSearch({
+      villeNom,
+      region,
+      dest_id: destId,
+      arrival_date: arrivalDate,
+      departure_date: departureDate,
+      nbr_chambre: nbrChambre,
+      nbr_adulte: nbrAdulte,
+      age_enfants: ageEnfants,
+    });
+  };
+
   const labelStyle = {
     display: "flex",
     alignItems: "center",
@@ -39,18 +54,6 @@ export default function HotelSearch({ ville, onSearch }) {
 
   const iconStyle = {
     color: "#F9A425",
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSearch({
-      ville,
-      arrival_date: arrivalDate,
-      departure_date: departureDate,
-      nbr_chambre: nbrChambre,
-      nbr_adulte: nbrAdulte,
-      age_enfants: ageEnfants,
-    });
   };
 
   return (
@@ -78,7 +81,7 @@ export default function HotelSearch({ ville, onSearch }) {
           id="ville"
           name="ville"
           type="text"
-          value={ville}
+          value={villeNom}
           readOnly
           style={{
             width: "100%",

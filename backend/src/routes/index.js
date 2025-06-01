@@ -4,6 +4,7 @@ const path = require('path');
 const utilisateurRouter = require("./utilisateur.router");
 const voyageRouter = require("./voyageorganise.router");
 const facebookRouter = require("./facebook.router");
+const quotaRouter = require ("./throttle.router")
 const authRouter = require("./auth.router");
 const instagramRouter = require("./instagram.router");
 const publicationRouter = require("./publication.router");
@@ -15,7 +16,7 @@ const factureRouter = require("./facture.router");
 const amadeusRouter = require("./amadeus.router");
 const commentaireRouter = require("./commentaire.router");
 const hotelRouter = require("./hotel.router");
-
+const visaRouter = require("./visa.router");
 module.exports = (app) => {
   // 📂 Fichiers statiques (images)
   app.use('/images', express.static(path.join(__dirname, '..', 'public', 'images')));
@@ -40,6 +41,14 @@ module.exports = (app) => {
 
   // 📸 Instagram
   app.use("/api/v1/instagram", instagramRouter);
+
+  //Qouta 
+    app.use("/api/v1/quota", quotaRouter);
+
+  
+  //visa 
+    app.use("/api/v1/visa", visaRouter);
+
 
   // 💳 Paiements
   app.use("/api/v1/paiements", paiementRouter);

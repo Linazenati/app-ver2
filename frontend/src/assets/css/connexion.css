@@ -1,5 +1,5 @@
 :root {
-    --bleu-fonce: #4f9be7;
+    --bleu-fonce: #05396d;
     --jaune: #f1c40f;
 }
 
@@ -13,6 +13,8 @@
     min-height: 100vh;
     background-color: var(--bleu-fonce);
 }
+
+
 
 .login-logo {
     width: 150px;
@@ -59,3 +61,35 @@ input {
     background-color: #f39c12;
 }
 
+
+.page-connexion {
+    background-color: white;
+    min-height: 100vh;
+}
+
+.login-container {
+    /* plus besoin du background ici */
+    background-color: transparent;
+}
+
+
+button[type="submit"] {
+    background-color: #05396d;
+    /* bleu bootstrap */
+    color: white;
+    /* texte blanc */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+
+    /* centrer horizontalement */
+    display: block;
+    margin: 20px auto;
+    font-size: 16px;
+}
+
+button[type="submit"]:hover {
+    background-color: #05396d;
+    /* bleu plus foncé au survol */
+}

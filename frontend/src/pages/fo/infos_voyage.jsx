@@ -25,7 +25,7 @@ const Infos_Voyage = () => {
     const fetchVoyage = async () => {
       try {
         console.log("ID voyage reçu :", id);
-        const response = await voyageService.getVoyagePublieAvecCommentaires(id);
+        const response = await voyageService.getDetailsVoyages(id);
         console.log("Réponse backend :", response);
       const { voyage, commentairesSocial } = response.data;
 

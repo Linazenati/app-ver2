@@ -27,8 +27,8 @@ module.exports = (sequelize, DataTypes) => {
     description: DataTypes.STRING,
     prix: DataTypes.INTEGER,
     
-    date_de_depart: DataTypes.DATE,
-    date_de_retour: DataTypes.DATE,
+    date_de_depart: DataTypes.DATEONLY,
+    date_de_retour: DataTypes.DATEONLY,
     duree: DataTypes.INTEGER,
     status: {
       type: DataTypes.ENUM('disponible', 'épuisé'),
@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
     image: {
       type: DataTypes.STRING, allowNull: true
     }, // ou false si c'est obligatoire
-    estPublie: {
+    est_publier: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },

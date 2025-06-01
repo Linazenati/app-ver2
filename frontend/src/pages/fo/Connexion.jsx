@@ -29,6 +29,14 @@ function Connexion() {
 
       const session = response.data.data;
       const role = session.utilisateur.role;
+
+      
+  // 🟢 Enregistrement du token dans le localStorage
+      localStorage.setItem("token", session.token); // ✅ indispensable
+      
+      localStorage.setItem("userId", session.utilisateur.id);
+
+      
       setUser( session );
       toast.success("Connexion reussié")
 
@@ -51,34 +59,38 @@ function Connexion() {
   };
 
   return (
+    <div className="page-connexion">
     <div className="login-container">
       <img src={Logo} alt="Logo Ziguade" className="login-logo" />
-      <form onSubmit={handleSubmit} className="login-form">
-        <div className="form-group">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="password">Mot de passe</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        <button type="submit" className="submit-btn">Se connecter</button>
-      </form>
+    <div className="login-box">
+  <form onSubmit={handleSubmit} className="login-form">
+    <div className="form-group">
+      <label htmlFor="email">Email</label>
+      <input
+        type="email"
+        id="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
+    </div>
+    <div className="form-group">
+      <label htmlFor="password">Mot de passe</label>
+      <input
+        type="password"
+        id="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+    </div>
+    <button type="submit">Se connecter</button>
+  </form>
+</div>
 
       <Toaster />
-    </div>
+      </div>
+      </div>
   );
 }
 
