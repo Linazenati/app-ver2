@@ -12,7 +12,8 @@ const {
   Vol,
   Hotel,
   Assurance,
-  Client
+  Client,
+  Agent
 } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
@@ -121,12 +122,34 @@ exports.handleStripeWebhook = async (req, res) => {
                 {
                   model: Voyage,
                   as: 'voyage',
-                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'programme']
+                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'programme', 'id_agent'],
+                  include: [
+                    {
+                      model: Agent,
+                      as: 'agent',
+                      include: [
+                        {
+                          model: Utilisateur,
+                          as: 'utilisateur',
+                          attributes: ['nom', 'prenom', 'email']
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   model: Omra,
                   as: 'omra',
-                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'duree', 'status']
+                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'duree', 'status'],
+                  include: {
+                    model: Agent,
+                    as: 'agent',
+                    include: {
+                      model: Utilisateur,
+                      as: 'utilisateur',
+                      attributes: ['nom', 'prenom', 'email']
+                    }
+                  }
                 }
               ]
             },
@@ -174,7 +197,9 @@ exports.handleStripeWebhook = async (req, res) => {
               `Prix : ${voyage.prix} DZD\n` +
               `Départ : ${dateDepart}\n` +
               `Retour : ${dateRetour}\n` +
-              `Description : ${voyage.description || 'Non disponible'}`;
+              `Description : ${voyage.description || 'Non disponible'}\n` +
+              `Agent : ${voyage.agent?.utilisateur?.prenom} ${voyage.agent?.utilisateur?.nom} (${voyage.agent?.utilisateur?.email})`
+              ;
 
           } else if (reservation.publication?.omra) {
             const omra = reservation.publication.omra;
@@ -186,7 +211,9 @@ exports.handleStripeWebhook = async (req, res) => {
               `Durée : ${omra.duree} jours\n` +
               `Départ : ${dateDepart}\n` +
               `Retour : ${dateRetour}\n` +
-              `Description : ${omra.description || 'Non disponible'}`;
+              `Description : ${omra.description || 'Non disponible'}\n` +
+              `Agent : ${omra.agent?.utilisateur?.prenom} ${omra.agent?.utilisateur?.nom} (${omra.agent?.utilisateur?.email})`
+              ;
           } else if (reservation.vol) {
             const vol = reservation.vol;
             const dateDepart = vol.date_depart ? new Date(vol.date_depart).toLocaleDateString() : 'Date inconnue';

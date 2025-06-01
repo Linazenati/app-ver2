@@ -11,7 +11,8 @@ const {
   Vol,
   Hotel,
   Assurance,
-  Client
+  Client,
+  Agent
 } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
@@ -73,7 +74,7 @@ exports.handleChargilyWebhook = async (req, res) => {
             if (!existingClient) {
               await Client.create({
                 id: utilisateur.id,
-                adresse: utilisateur.adresse|| 'Adresse non renseignée', // Tu peux éventuellement enrichir cela plus tard
+                adresse: utilisateur.adresse || 'Adresse non renseignée', // Tu peux éventuellement enrichir cela plus tard
               });
               console.log(`Utilisateur avec ID ${utilisateur.id} ajouté en tant que client.`);
             }
@@ -105,9 +106,38 @@ exports.handleChargilyWebhook = async (req, res) => {
               model: Publication,
               as: 'publication',
               include: [
-                { model: Voyage, as: 'voyage', attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'programme'] },
-                { model: Omra, as: 'omra', attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'duree', 'status'] }
-              ]
+                {
+                  model: Voyage,
+                  as: 'voyage',
+                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'programme', 'id_agent'],
+                  include: [
+                    {
+                      model: Agent,
+                      as: 'agent',
+                      include: [
+                        {
+                          model: Utilisateur,
+                          as: 'utilisateur',
+                          attributes: ['nom', 'prenom', 'email']
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  model: Omra,
+                  as: 'omra',
+                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'duree', 'status'],
+                  include: {
+                    model: Agent,
+                    as: 'agent',
+                    include: {
+                      model: Utilisateur,
+                      as: 'utilisateur',
+                      attributes: ['nom', 'prenom', 'email']
+                    }
+                  }
+                }]
             },
             {
               model: Vol,
@@ -156,7 +186,8 @@ exports.handleChargilyWebhook = async (req, res) => {
               `Prix : ${voyage.prix} DZD\n` +
               `Départ : ${dateDepart}\n` +
               `Retour : ${dateRetour}\n` +
-              `Description : ${voyage.description || 'Non disponible'}`;
+              `Description : ${voyage.description || 'Non disponible'}\n` +
+              `Agent : ${voyage.agent?.utilisateur?.prenom} ${voyage.agent?.utilisateur?.nom} (${voyage.agent?.utilisateur?.email})`
 
 
           } else if (reservation.publication?.omra) {
@@ -169,7 +200,10 @@ exports.handleChargilyWebhook = async (req, res) => {
               `Durée : ${omra.duree} jours\n` +
               `Départ : ${dateDepart}\n` +
               `Retour : ${dateRetour}\n` +
-              `Description : ${omra.description || 'Non disponible'}`;
+              `Description : ${omra.description || 'Non disponible'}\n` +
+              `Agent : ${omra.agent?.utilisateur?.prenom} ${omra.agent?.utilisateur?.nom} (${omra.agent?.utilisateur?.email})`
+
+              ;
           } else if (reservation.vol) {
             // Nouveau format pour les vols
             const vol = reservation.vol;

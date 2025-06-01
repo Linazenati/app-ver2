@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-   Agent.belongsTo(models.Utilisateur, {foreignKey: 'id',  // clé étrangère
+   Agent.belongsTo(models.Utilisateur, {foreignKey: 'id', 
+    as: 'utilisateur', // clé étrangère
    });
     Agent.hasMany(models.Voyage, {foreignKey: 'id_agent',  // clé étrangère
    });

@@ -41,7 +41,7 @@ const createUtilisateur = async (data) => {
   // Créer le rôle associé
 
   
-  return utilisateur;
+  
 };
 
 
