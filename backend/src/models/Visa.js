@@ -15,7 +15,12 @@ module.exports = (sequelize, DataTypes) => {
         as: 'utilisateurInscrit',
         allowNull: false
       });
-        
+         Visa.hasMany(models.Paiement, {
+        foreignKey: 'id_visa',
+        as: 'paiements' // alias pour accéder aux paiements liés à un visa
+      });
+
+      
     }
   }
 

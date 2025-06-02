@@ -93,6 +93,8 @@ setVilleDetails(villeResponse.data);
       setLoading(true);
       setError(null);
       const response = await hotelService.searchAndSaveHotelsForVille(criteres);
+          console.log("Données brutes reçues de searchAndSaveHotelsForVille :", response.data); // 👈 Ajout
+
       const hotelsFormatted = response.data.map(formatHotel);
       setHotels(hotelsFormatted);
     } catch (err) {

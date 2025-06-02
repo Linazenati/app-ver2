@@ -18,6 +18,12 @@ module.exports = (sequelize, DataTypes) => {
     foreignKey: 'id_assurance',
     as: 'assurance' // ✅ alias pour accéder à l'assurance liée à un paiement
   });
+
+  
+   Paiement.belongsTo(models.Visa, {
+        foreignKey: 'id_visa',
+        as: 'visa' // alias pour accéder au visa lié à un paiement
+      });
     }
   }
   Paiement.init({

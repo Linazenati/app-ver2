@@ -1,13 +1,25 @@
- const stripeService = require('../services/stripe.service');
-const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel, Assurance } = require('../models');
+const stripeService = require('../services/stripe.service');
+const {
+  Paiement,
+  Reservation,
+  Utilisateur_inscrit,
+  Utilisateur,
+  Publication,
+  Voyage,
+  Omra,
+  Vol,
+  Hotel,
+  Assurance,
+  Visa // 🔹 Ajouté
+} = require('../models');
 
 exports.initiatePayment = async (req, res) => {
   try {
-    const { reservationId, assuranceId } = req.body;
+    const { reservationId, assuranceId, visaId } = req.body;
     console.log('Données reçues pour initier paiement Stripe :', req.body);
 
-    if (!reservationId && !assuranceId) {
-      return res.status(400).json({ message: "L'ID de la réservation ou de l'assurance est requis." });
+    if (!reservationId && !assuranceId && !visaId) {
+      return res.status(400).json({ message: "Un ID (réservation, assurance ou visa) est requis." });
     }
 
     let reservation = null;
@@ -67,33 +79,47 @@ exports.initiatePayment = async (req, res) => {
       }
       prix = assurance.prix;
       titre = `Assurance ${assurance.type}`;
-      // Pour les assurances, il faut récupérer un utilisateur valide, ici un choix possible :
-      // soit tu reçois aussi un userId, soit tu prends un user par défaut,
-      // sinon tu peux lier à la reservation de l'assurance si tu as cette info
-      // Ici je laisse null, à adapter selon ton modèle :
       utilisateur = null;
+    } else if (visaId) {
+      const visa = await Visa.findByPk(visaId, {
+        include: [
+          {
+            model: Utilisateur_inscrit,
+            as: 'utilisateurInscrit',
+            include: [{ model: Utilisateur, as: 'utilisateur' }]
+          }
+        ]
+      });
+
+      if (!visa) {
+        return res.status(404).json({ message: "Visa introuvable." });
+      }
+
+      prix = visa.total;
+      titre = `Visa pour ${visa.pays} (${visa.typeVisa})`;
+      utilisateur = visa.utilisateur_inscrit?.utilisateur || null;
     }
 
     if (!prix) {
-      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation ou l'assurance." });
+      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation, l'assurance ou le visa." });
     }
 
-    // Stripe attend un montant en centimes
     const montantCentimes = Math.round(prix * 100);
 
-    // On crée l'entrée Paiement avant la session Stripe
     const paiement = await Paiement.create({
       devise: 'USD',
       methode_paiement: 'Stripe',
       statut: 'en_attente',
       id_reservation: reservationId || null,
-      id_assurance: assuranceId || null
+      id_assurance: assuranceId || null,
+      id_visa: visaId || null // 🔹 Ajout ici
     });
-console.log('Paiement ID:', paiement.id);
-console.log('Réservation ID:', reservationId);
-console.log('Assurance ID:', assuranceId);
 
-    // Préparation des données pour Stripe
+    console.log('Paiement ID:', paiement.id);
+    console.log('Réservation ID:', reservationId);
+    console.log('Assurance ID:', assuranceId);
+    console.log('Visa ID:', visaId);
+
     const stripeData = {
       amount: montantCentimes,
       currency: 'usd',
@@ -103,13 +129,14 @@ console.log('Assurance ID:', assuranceId);
       cancel_url: 'http://localhost:5173/web',
       paiementId: paiement.id,
       reservationId: reservationId || null,
-      assuranceId: assuranceId || null
+      assuranceId: assuranceId || null,
+      visaId: visaId || null
     };
 
     const session = await stripeService.createCheckoutSession(stripeData);
 
     if (!session?.url) {
-      await paiement.destroy(); // rollback en cas d’échec
+      await paiement.destroy();
       return res.status(500).json({ message: "Erreur lors de la création de la session Stripe." });
     }
 

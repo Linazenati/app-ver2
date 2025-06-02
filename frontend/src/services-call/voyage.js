@@ -37,5 +37,7 @@ voyageService.getVoyagesPubliesSurSite = () =>
 voyageService.getDetailsVoyages = (id) =>
   api.get(`${API_POINT}/publies/siteCommentaire/${id}`);
 
+  voyageService.getVoyagePublieAvecCommentaires = (id) =>
+  api.get(`${API_POINT}/publies/siteCommentaire/${id}`);
   
 export default voyageService;

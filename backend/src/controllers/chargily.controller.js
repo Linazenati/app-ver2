@@ -1,12 +1,13 @@
 const chargilyService = require('../services/chargily.service');
-const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel, Assurance } = require('../models');
+const { Paiement, Reservation, Utilisateur_inscrit, Utilisateur, Publication, Voyage, Omra, Vol, Hotel, Assurance, Visa } = require('../models');
 
 exports.initiatePayment = async (req, res) => {
   try {
-    const { reservationId, assuranceId } = req.body;
+    const { reservationId, assuranceId, visaId } = req.body;
     console.log('Données reçues pour initier paiement :', req.body);
 
     let reservation = null;
+    let visa = null;
 
     if (reservationId) {
       // Récupération de la réservation avec toutes les associations nécessaires
@@ -46,6 +47,13 @@ exports.initiatePayment = async (req, res) => {
       }
     }
 
+    if (visaId) {
+      visa = await Visa.findByPk(visaId);
+      if (!visa) {
+        return res.status(404).json({ message: "Visa introuvable." });
+      }
+    }
+
     let prix = null;
     let titre = 'Paiement Ziguade Tour';
     let utilisateur = null;
@@ -57,6 +65,9 @@ exports.initiatePayment = async (req, res) => {
       }
       prix = assurance.prix;
       titre = `Assurance ${assurance.type}`;
+    } else if (visa) {
+      prix = visa.total;
+      titre = `Visa pour ${visa.pays} (${visa.typeVisa})`;
     } else if (reservation) {
       const utilisateurInscrit = reservation.utilisateur_inscrit;
       utilisateur = utilisateurInscrit?.utilisateur;
@@ -82,22 +93,20 @@ exports.initiatePayment = async (req, res) => {
     }
 
     if (!prix) {
-      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation ou l'assurance." });
+      return res.status(400).json({ message: "Aucun prix trouvé pour la réservation, l'assurance ou le visa." });
     }
 
-    // Fonction utilitaire pour convertir les devises (exemple statique)
     function convertirEnDZD(prix, devise) {
       const tauxChange = {
-        EUR: 245, // Exemple de taux, à ajuster
+        EUR: 245,
         USD: 140,
         DZD: 1
       };
       return Math.round(parseFloat(prix) * (tauxChange[devise] || 1));
     }
 
-    const montantCentimes = convertirEnDZD(prix, reservation?.vol?.devise || 'DZD'); // Chargily accepte le montant en DZD entier
+    const montantCentimes = convertirEnDZD(prix, reservation?.vol?.devise || 'DZD');
 
-    // Construction des données de paiement
     const paymentData = {
       amount: montantCentimes,
       currency: "dzd",
@@ -117,21 +126,21 @@ exports.initiatePayment = async (req, res) => {
       metadata: [{}]
     };
 
-    // Appel à l’API Chargily
     const response = await chargilyService.createPaymentLink(paymentData);
 
     if (!response?.data?.checkout_url) {
       return res.status(500).json({ message: "Erreur lors de la création du lien de paiement." });
     }
 
-    // Enregistrement du paiement
+    // Enregistrement du paiement avec visaId ajouté
     const paiement = await Paiement.create({
       devise: 'DZD',
       methode_paiement: 'Chargily',
       statut: 'en_attente',
       lien_paiement: response.data.checkout_url,
       id_reservation: reservationId || null,
-      id_assurance: assuranceId || null
+      id_assurance: assuranceId || null,
+      id_visa: visaId || null
     });
 
     return res.status(200).json({

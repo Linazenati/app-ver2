@@ -13,7 +13,8 @@ const {
   Hotel,
   Assurance,
   Client,
-  Agent
+  Agent,
+  Visa
 } = require('../models');
 const generateInvoice = require('../services/facture.service');
 const sendMail = require('../utils/sendMail');
@@ -102,6 +103,53 @@ exports.handleStripeWebhook = async (req, res) => {
           shouldGenerateInvoice = true;
         }
       }
+
+      // Cas 2: Paiement pour un visa
+      else if (paiement.id_visa) {
+        const visa = await Visa.findByPk(paiement.id_visa, {
+          include: [{
+            model: Utilisateur_inscrit,
+            as: 'utilisateurInscrit',
+            include: [{
+              model: Utilisateur,
+              as: 'utilisateur',
+              attributes: ['id', 'nom', 'prenom', 'email', 'telephone']
+            }]
+          }]
+        });
+
+        if (visa) {
+          utilisateur = visa.utilisateurInscrit?.utilisateur;
+          nom = utilisateur?.nom || 'Nom inconnu';
+          prenom = utilisateur?.prenom || '';
+          email = utilisateur?.email || '';
+          telephone = utilisateur?.telephone || '';
+
+          if (utilisateur?.id) {
+            const existingClient = await Client.findByPk(utilisateur.id);
+
+            if (!existingClient) {
+              await Client.create({
+                id: utilisateur.id,
+                adresse: utilisateur.adresse || 'Adresse non renseignée',
+              });
+              console.log(`Utilisateur avec ID ${utilisateur.id} ajouté en tant que client.`);
+            }
+          }
+
+          destination = `Demande de Visa\n` +
+            `Pays de destination : ${visa.pays || 'Non spécifié'}\n` +
+            `Type de visa : ${visa.typeVisa || 'Non précisé'}\n` +
+            `Nombre de personnes : ${visa.personnes || 'Non précisé'}\n` +
+            `Nationalité : ${visa.nationalite || 'Non précisée'}\n` +
+            `Date d’arrivée prévue : ${visa.dateArrivee || 'Non précisée'}`;
+
+          shouldGenerateInvoice = true;
+        }
+      }
+
+
+
       // Cas 2: Paiement pour une réservation
       else if (paiement.id_reservation) {
         const reservation = await Reservation.findByPk(paiement.id_reservation, {

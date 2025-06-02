@@ -11,6 +11,7 @@ const {
   Vol,
   Hotel,
   Assurance,
+  Visa,
   Client,
   Agent
 } = require('../models');
@@ -70,16 +71,14 @@ exports.handleChargilyWebhook = async (req, res) => {
 
           if (utilisateur?.id) {
             const existingClient = await Client.findByPk(utilisateur.id);
-
             if (!existingClient) {
               await Client.create({
                 id: utilisateur.id,
-                adresse: utilisateur.adresse || 'Adresse non renseignée', // Tu peux éventuellement enrichir cela plus tard
+                adresse: utilisateur.adresse || 'Adresse non renseignée',
               });
-              console.log(`Utilisateur avec ID ${utilisateur.id} ajouté en tant que client.`);
             }
           }
-          //destination = `Assurance Voyage - ${assurance.type}`;
+
           destination = `Type d'assurance : ${assurance.type}\n`
             + `Date début : ${new Date(assurance.dateDebut).toLocaleDateString()}\n`
             + `Date fin : ${new Date(assurance.dateFin).toLocaleDateString()}\n`
@@ -89,7 +88,51 @@ exports.handleChargilyWebhook = async (req, res) => {
           shouldGenerateInvoice = true;
         }
       }
-      // Cas 2: Paiement pour une réservation
+
+      // Cas 2: Paiement pour un visa
+      else if (paiement.id_visa) {
+        const visa = await Visa.findByPk(paiement.id_visa, {
+          include: [{
+            model: Utilisateur_inscrit,
+            as: 'utilisateurInscrit',
+            include: [{
+              model: Utilisateur,
+              as: 'utilisateur',
+              attributes: ['id', 'nom', 'prenom', 'email', 'telephone']
+            }]
+          }]
+        });
+
+        if (visa) {
+          utilisateur = visa.utilisateurInscrit?.utilisateur;
+          nom = utilisateur?.nom || 'Nom inconnu';
+          prenom = utilisateur?.prenom || '';
+          email = utilisateur?.email || '';
+          telephone = utilisateur?.telephone || '';
+
+          if (utilisateur?.id) {
+            const existingClient = await Client.findByPk(utilisateur.id);
+            if (!existingClient) {
+              await Client.create({
+                id: utilisateur.id,
+                adresse: utilisateur.adresse || 'Adresse non renseignée',
+              });
+            }
+          }
+
+           destination = `Demande de Visa\n` +
+            `Pays de destination : ${visa.pays || 'Non spécifié'}\n` +
+            `Type de visa : ${visa.typeVisa || 'Non précisé'}\n` +
+            `Nombre de personnes : ${visa.personnes || 'Non précisé'}\n` +
+            `Nationalité : ${visa.nationalite || 'Non précisée'}\n` +
+            `Date d’arrivée prévue : ${visa.dateArrivee || 'Non précisée'}`;
+
+          shouldGenerateInvoice = true;
+
+        }
+      }
+
+      // Cas 3: Paiement pour une réservation
       else if (paiement.id_reservation) {
         const reservation = await Reservation.findByPk(paiement.id_reservation, {
           include: [
@@ -109,25 +152,19 @@ exports.handleChargilyWebhook = async (req, res) => {
                 {
                   model: Voyage,
                   as: 'voyage',
-                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'programme', 'id_agent'],
-                  include: [
-                    {
-                      model: Agent,
-                      as: 'agent',
-                      include: [
-                        {
-                          model: Utilisateur,
-                          as: 'utilisateur',
-                          attributes: ['nom', 'prenom', 'email']
-                        }
-                      ]
-                    }
-                  ]
+                  include: [{
+                    model: Agent,
+                    as: 'agent',
+                    include: [{
+                      model: Utilisateur,
+                      as: 'utilisateur',
+                      attributes: ['nom', 'prenom', 'email']
+                    }]
+                  }]
                 },
                 {
                   model: Omra,
                   as: 'omra',
-                  attributes: ['titre', 'description', 'prix', 'date_de_depart', 'date_de_retour', 'duree', 'status'],
                   include: {
                     model: Agent,
                     as: 'agent',
@@ -139,16 +176,8 @@ exports.handleChargilyWebhook = async (req, res) => {
                   }
                 }]
             },
-            {
-              model: Vol,
-              as: 'vol',
-              attributes: ['numero_vol', 'compagnie_aerienne', 'aeroport_depart', 'aeroport_arrivee', 'date_depart', 'date_arrivee']
-            },
-            {
-              model: Hotel,
-              as: 'hotel',
-              attributes: ['name', 'ville', 'adresse', 'etoiles', 'region']
-            }
+            { model: Vol, as: 'vol' },
+            { model: Hotel, as: 'hotel' }
           ]
         });
 
@@ -164,65 +193,27 @@ exports.handleChargilyWebhook = async (req, res) => {
 
           if (utilisateur?.id) {
             const existingClient = await Client.findByPk(utilisateur.id);
-
             if (!existingClient) {
               await Client.create({
                 id: utilisateur.id,
-                adresse: utilisateur.adresse || 'Adresse non renseignée', // Tu peux éventuellement enrichir cela plus tard
+                adresse: utilisateur.adresse || 'Adresse non renseignée',
               });
-              console.log(`Utilisateur avec ID ${utilisateur.id} ajouté en tant que client.`);
             }
           }
-          // Détermination de la destination
-          // ... (le reste du code reste inchangé jusqu'à la partie réservation)
 
-          // Dans la partie où vous traitez la réservation, modifiez la destination pour les vols
           if (reservation.publication?.voyage) {
             const voyage = reservation.publication.voyage;
-            const dateDepart = voyage.date_de_depart ? new Date(voyage.date_de_depart).toLocaleDateString() : 'Date inconnue';
-            const dateRetour = voyage.date_de_retour ? new Date(voyage.date_de_retour).toLocaleDateString() : 'Date inconnue';
-
-            destination = `Voyage : ${voyage.titre}\n` +
-              `Prix : ${voyage.prix} DZD\n` +
-              `Départ : ${dateDepart}\n` +
-              `Retour : ${dateRetour}\n` +
-              `Description : ${voyage.description || 'Non disponible'}\n` +
-              `Agent : ${voyage.agent?.utilisateur?.prenom} ${voyage.agent?.utilisateur?.nom} (${voyage.agent?.utilisateur?.email})`
-
-
+            destination = `Voyage : ${voyage.titre}\nPrix : ${voyage.prix} DZD\nDépart : ${new Date(voyage.date_de_depart).toLocaleDateString()}\nRetour : ${new Date(voyage.date_de_retour).toLocaleDateString()}\nDescription : ${voyage.description || 'N/A'}\nAgent : ${voyage.agent?.utilisateur?.prenom} ${voyage.agent?.utilisateur?.nom} (${voyage.agent?.utilisateur?.email})`;
           } else if (reservation.publication?.omra) {
             const omra = reservation.publication.omra;
-            const dateDepart = omra.date_de_depart ? new Date(omra.date_de_depart).toLocaleDateString() : 'Date inconnue';
-            const dateRetour = omra.date_de_retour ? new Date(omra.date_de_retour).toLocaleDateString() : 'Date inconnue';
-
-            destination = `Omra : ${omra.titre}\n` +
-              `Prix : ${omra.prix} DZD\n` +
-              `Durée : ${omra.duree} jours\n` +
-              `Départ : ${dateDepart}\n` +
-              `Retour : ${dateRetour}\n` +
-              `Description : ${omra.description || 'Non disponible'}\n` +
-              `Agent : ${omra.agent?.utilisateur?.prenom} ${omra.agent?.utilisateur?.nom} (${omra.agent?.utilisateur?.email})`
-
-              ;
+            destination = `Omra : ${omra.titre}\nPrix : ${omra.prix} DZD\nDurée : ${omra.duree} jours\nDépart : ${new Date(omra.date_de_depart).toLocaleDateString()}\nRetour : ${new Date(omra.date_de_retour).toLocaleDateString()}\nDescription : ${omra.description || 'N/A'}\nAgent : ${omra.agent?.utilisateur?.prenom} ${omra.agent?.utilisateur?.nom} (${omra.agent?.utilisateur?.email})`;
           } else if (reservation.vol) {
-            // Nouveau format pour les vols
             const vol = reservation.vol;
-            const dateDepart = vol.date_depart ? new Date(vol.date_depart).toLocaleDateString() : 'Date inconnue';
-            const dateArrivee = vol.date_arrivee ? new Date(vol.date_arrivee).toLocaleDateString() : 'Date inconnue';
-
-            destination = `Vol ${vol.numero_vol} (${vol.compagnie_aerienne})\n`
-              + `De ${vol.aeroport_depart} à ${vol.aeroport_arrivee}\n`
-              + `Départ: ${dateDepart}\n`
-              + `Arrivée: ${dateArrivee}`;
+            destination = `Vol ${vol.numero_vol} (${vol.compagnie_aerienne})\nDe ${vol.aeroport_depart} à ${vol.aeroport_arrivee}\nDépart: ${new Date(vol.date_depart).toLocaleDateString()}\nArrivée: ${new Date(vol.date_arrivee).toLocaleDateString()}`;
           } else if (reservation.hotel) {
             const hotel = reservation.hotel;
-            destination = `Hôtel ${hotel.name}\n` +
-              `Ville : ${hotel.ville || 'Non spécifiée'}\n` +
-              `Adresse : ${hotel.adresse || 'Non spécifiée'}\n` +
-              `Classement : ${'★'.repeat(hotel.etoiles || 0)}`;
+            destination = `Hôtel ${hotel.name}\nVille : ${hotel.ville}\nAdresse : ${hotel.adresse}\nClassement : ${'★'.repeat(hotel.etoiles || 0)}`;
           }
-
-
 
           shouldGenerateInvoice = true;
         }
@@ -235,7 +226,6 @@ exports.handleChargilyWebhook = async (req, res) => {
           fs.mkdirSync(dossierFactures, { recursive: true });
         }
 
-        // Modification du chemin du fichier comme demandé
         const facturePath = path.join(dossierFactures, `facture-${utilisateur?.id || 'inconnu'}-${paiement.id}.pdf`);
 
         await generateInvoice({
@@ -257,7 +247,7 @@ exports.handleChargilyWebhook = async (req, res) => {
             subject: 'Votre facture - ZIGUADE TOUR',
             text: `Bonjour ${prenom},\n\nMerci pour votre paiement. Veuillez trouver ci-joint votre facture.\n\n${destination}\n${assuranceInfo}\n\nL'équipe ZIGUADE TOUR`,
             attachments: [{
-              filename: `facture-${paiement.id}.pdf`, // Vous pouvez aussi modifier ce nom si besoin
+              filename: `facture-${paiement.id}.pdf`,
               path: facturePath
             }]
           });
@@ -271,3 +261,4 @@ exports.handleChargilyWebhook = async (req, res) => {
     return res.status(500).json({ message: 'Erreur lors du traitement du webhook.' });
   }
 };
+

@@ -1,208 +1,390 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Table, Button, Form, Row, Col, Alert, Spinner } from "react-bootstrap";
-import { Eye } from "react-bootstrap-icons";
-import toast, { Toaster } from "react-hot-toast";
-
-import serviceVisa from "../../services-call/visa "; // Corrigé : pas d’espace à la fin
-
-// 1. Import du modal participants
+import React, { useEffect, useState } from "react";
+import {
+  Table,
+  Button,
+  Input,
+  Modal,
+  Tag,
+  Descriptions,
+  message,
+  Popconfirm,
+  DatePicker,
+  Space,
+  Form,
+  Select,
+  Card
+} from "antd";
+import {
+  SearchOutlined,
+  InfoCircleOutlined,
+  DeleteOutlined,
+  FilterOutlined,
+  EditOutlined,
+  PlusOutlined,
+  EyeOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  DollarOutlined
+} from "@ant-design/icons";
+import serviceVisa from "../../services-call/visa ";
+import { useUser } from "../../contexts/UserContext";
+import dayjs from "dayjs";
 import ParticipantsModal from "../../components/bo/ParticipantsModal";
 
-const ListeVisas = () => {
+const { RangePicker } = DatePicker;
+const { Option } = Select;
+
+export default function ListeVisasPage() {
+  const { user: contextUser } = useUser();
+  const [user, setUser] = useState(contextUser || null);
   const [visas, setVisas] = useState([]);
-  const [count, setCount] = useState(0);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const [filters, setFilters] = useState({
-    search: "",
-    limit: 5,
-    offset: 0,
-    orderBy: "createdAt",
-    orderDir: "ASC",
-    typeVisa: "",
-    pays: ""
-  });
-
-  // 2. État pour gérer ouverture modal et visa sélectionné
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentVisa, setCurrentVisa] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
   const [selectedVisaId, setSelectedVisaId] = useState(null);
+  const [searchText, setSearchText] = useState("");
+  const [dateRangeFilter, setDateRangeFilter] = useState(null);
+  const [typeFilter, setTypeFilter] = useState(null);
+  const [paysFilter, setPaysFilter] = useState(null);
 
-  const fetchVisas = useCallback(async () => {
+  useEffect(() => {
+    if (!contextUser) {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } else {
+      setUser(contextUser);
+    }
+  }, [contextUser]);
+
+  const token = user?.token;
+
+  const fetchVisas = async () => {
+    if (!token) {
+      message.error("Vous devez être connecté pour accéder à cette page");
+      return;
+    }
+
     try {
       setLoading(true);
-      setError("");
-      const response = await serviceVisa.getAllVisas({ params: filters });
-      const { data } = response;
+      const res = await serviceVisa.getAllVisas(token);
+      console.log("Visas récupérés :", res?.data);
+      setVisas(res?.data?.data || []);
 
-      setVisas(data.data || []);
-      setCount(data.total || 0);
     } catch (err) {
-      console.error("Erreur fetchVisas:", err);
-      setError(err.response?.data?.message || "Erreur lors de la récupération des visas.");
+      console.error("Erreur:", err);
+      message.error("Erreur lors de la récupération des visas");
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
   useEffect(() => {
-    fetchVisas();
-  }, [fetchVisas]);
+    if (token) fetchVisas();
+  }, [token]);
 
-  const handleFilterChange = (field, value) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-      offset: 0
-    }));
+  const getUserInfo = (visa) => {
+    if (!visa.utilisateurInscrit) return null;
+    
+    if (visa.utilisateurInscrit.utilisateur) {
+      return visa.utilisateurInscrit.utilisateur;
+    }
+    
+    return visa.utilisateurInscrit;
   };
 
-  const handleSort = (column) => {
-    setFilters((prev) => ({
-      ...prev,
-      orderBy: column,
-      orderDir: prev.orderBy === column && prev.orderDir === "ASC" ? "DESC" : "ASC",
-      offset: 0
-    }));
+  const handleDelete = async (id) => {
+    try {
+      await serviceVisa.remove(id, token);
+      message.success("Visa supprimé");
+      fetchVisas();
+    } catch (err) {
+      message.error("Erreur lors de la suppression");
+    }
   };
 
-  const handlePagination = (direction) => {
-    setFilters((prev) => ({
-      ...prev,
-      offset: direction === "next" ? prev.offset + prev.limit : Math.max(0, prev.offset - prev.limit)
-    }));
+  const showDetails = (visa) => {
+    setCurrentVisa(visa);
+    setIsDetailModalOpen(true);
   };
 
-  // 3. Fonction ouverture modal + set visaId
-  const openModal = (visaId) => {
+  const showParticipants = (visaId) => {
     setSelectedVisaId(visaId);
-    setIsModalOpen(true);
+    setIsParticipantsModalOpen(true);
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedVisaId(null);
+  const handleRequestPayment = async (visaId) => {
+    try {
+      // Implémentez la logique de demande de paiement ici
+      message.success("Demande de paiement envoyée");
+    } catch (err) {
+      message.error("Erreur lors de la demande de paiement");
+    }
+  };
+
+  // Extraire les types et pays uniques pour les filtres
+  const typesUniques = [...new Set(visas.map(v => v.typeVisa))];
+  const paysUniques = [...new Set(visas.map(v => v.pays))];
+
+  const filteredVisas = visas.filter((v) => {
+    const matchesSearch = searchText
+      ? Object.values(v).some(val =>
+          val && val.toString().toLowerCase().includes(searchText.toLowerCase())
+      ): true;
+
+    let matchesDate = true;
+    if (dateRangeFilter && dateRangeFilter[0] && dateRangeFilter[1]) {
+      const date = dayjs(v.createdAt);
+      matchesDate =
+        date.isAfter(dateRangeFilter[0]) &&
+        date.isBefore(dateRangeFilter[1]);
+    }
+
+    const matchesType = typeFilter
+      ? v.typeVisa === typeFilter
+      : true;
+
+    const matchesPays = paysFilter
+      ? v.pays === paysFilter
+      : true;
+
+    return matchesSearch && matchesDate && matchesType && matchesPays;
+  });
+
+  const columns = [
+  {
+    title: "ID",
+    dataIndex: "id",
+    key: "id",
+    width: 70,
+    sorter: (a, b) => a.id - b.id
+  },
+  {
+    title: "Pays",
+    dataIndex: "pays",
+    key: "pays",
+    render: (pays) => <Tag color="geekblue">{pays}</Tag>,
+    sorter: (a, b) => a.pays.localeCompare(b.pays)
+  },
+  {
+    title: "Type Visa",
+    dataIndex: "typeVisa",
+    key: "typeVisa",
+    render: (type) => <Tag color="blue">{type}</Tag>,
+    sorter: (a, b) => a.typeVisa.localeCompare(b.typeVisa)
+  },
+  {
+    title: "Personnes",
+    dataIndex: "personnes",
+    key: "personnes",
+    sorter: (a, b) => a.personnes - b.personnes
+  },
+  {
+    title: "Nationalité",
+    dataIndex: "nationalite",
+    key: "nationalite",
+    sorter: (a, b) => a.nationalite?.localeCompare(b.nationalite)
+  },
+  {
+    title: "Date Arrivée",
+    dataIndex: "dateArrivee",
+    key: "dateArrivee",
+    render: (date) => date ? dayjs(date).format("DD/MM/YYYY") : "",
+    sorter: (a, b) => new Date(a.dateArrivee) - new Date(b.dateArrivee)
+  },
+  
+  {
+    title: "Total",
+    dataIndex: "total",
+    key: "total",
+    render: (total) => `${total} DA`,
+    sorter: (a, b) => a.total - b.total
+  },
+  {
+    title: "Utilisateur",
+    dataIndex: "utilisateurInscrit",
+    key: "utilisateurInscrit",
+    render: (u) => u?.utilisateur?.nom
+      ? `${u.utilisateur.nom} ${u.utilisateur.prenom}`
+      : u?.email || "N/A"
+  },
+  {
+    title: "Actions",
+    key: "actions",
+    width: 180,
+    render: (_, record) => (
+      <Space size="small">
+        <Button
+          type="text"
+          icon={<EyeOutlined />}
+          onClick={() => showParticipants(record.id)}
+        />
+        <Button
+          type="text"
+          icon={<InfoCircleOutlined />}
+          onClick={() => showDetails(record)}
+        />
+        <Button
+          type="text"
+          icon={<DollarOutlined />}
+          onClick={() => handleRequestPayment(record.id)}
+        />
+        <Popconfirm
+          title="Supprimer cette demande de visa ?"
+          onConfirm={() => handleDelete(record.id)}
+          okText="Oui"
+          cancelText="Non"
+        >
+          <Button type="text" icon={<DeleteOutlined />} danger />
+        </Popconfirm>
+      </Space>
+    )
+  }
+];
+
+
+  const resetFilters = () => {
+    setDateRangeFilter(null);
+    setSearchText("");
+    setTypeFilter(null);
+    setPaysFilter(null);
   };
 
   return (
-    <div className="p-3">
-      <Toaster position="top-right" />
-      <h3>Liste des visas</h3>
-      {error && <Alert variant="danger">{error}</Alert>}
+    <div className="content">
+      <div
+        style={{
+          position: "fixed",
+          left: 250,
+          right: 0,
+          background: "white",
+          zIndex: 1000,
+          padding: "10px 20px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          height: "150px",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center"
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 10
+          }}
+        >
+          <h2 style={{ margin: 0 }}>Liste des demandes de visa</h2>
+          <Space>
+            <Input
+              placeholder="Rechercher..."
+              prefix={<SearchOutlined />}
+              onChange={(e) => setSearchText(e.target.value)}
+              value={searchText}
+              style={{ width: 300 }}
+            />
+          </Space>
+        </div>
 
-      <Row className="mb-3 g-2 align-items-center">
-        <Col md={3}>
-          <Form.Control
-            placeholder="Rechercher..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
+        <Space>
+          <RangePicker
+            placeholder={["Date début", "Date fin"]}
+            onChange={(dates) => setDateRangeFilter(dates)}
+            value={dateRangeFilter}
+            style={{ width: 250 }}
           />
-        </Col>
-        <Col md={2}>
-          <Form.Select value={filters.typeVisa} onChange={(e) => handleFilterChange("typeVisa", e.target.value)}>
-            <option value="">Tous types</option>
-            <option value="Etudes">Etudes</option>
-            <option value="Tourisme">Tourisme</option>
-            <option value="Affaires">Affaires</option>
-          </Form.Select>
-        </Col>
-        <Col md={2}>
-          <Form.Select value={filters.pays} onChange={(e) => handleFilterChange("pays", e.target.value)}>
-            <option value="">Tous pays</option>
-            <option value="France">France</option>
-            <option value="Canada">Canada</option>
-            <option value="États-Unis">États-Unis</option>
-            <option value="Maroc">Maroc</option>
-            <option value="Turquie">Turquie</option>
-            <option value="Allemagne">Allemagne</option>
-            <option value="Italie">Italie</option>
-            <option value="Espagne">Espagne</option>
-            <option value="Qatar">Qatar</option>
-            <option value="Egypte">Egypte</option>
-            <option value="Thailande">Thailande</option>
-            <option value="Vietnam">Vietnam</option>
-            <option value="Azerbaïdjan">Azerbaïdjan</option>
-          </Form.Select>
-        </Col>
-      </Row>
-
-      <Table striped bordered hover responsive>
-        <thead className="table-dark">
-          <tr>
-            <th onClick={() => handleSort("id")}>ID {filters.orderBy === "id" && (filters.orderDir === "ASC" ? "▲" : "▼")}</th>
-            <th>Pays</th>
-            <th>Type Visa</th>
-            <th>Nombre Personnes</th>
-            <th>Date d'Arrivée</th>
-            <th>Prix</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr>
-              <td colSpan="7" className="text-center">
-                <Spinner animation="border" /> Chargement...
-              </td>
-            </tr>
-          ) : visas.length > 0 ? (
-            visas.map((v) => (
-              <tr key={v.id}>
-                <td>{v.id}</td>
-                <td>{v.pays}</td>
-                <td>{v.typeVisa}</td>
-                <td>{v.personnes}</td>
-                <td>{v.dateArrivee}</td>
-                <td>{v.total}</td>
-                <td>
-                  <div className="d-flex gap-2">
-                    <Button variant="warning" size="sm" onClick={() => openModal(v.id)}>
-                      <Eye /> Voir plus
-                    </Button>
-                    <Button variant="danger" size="sm">Refuser</Button>
-                    <Button variant="success" size="sm">Demander Paiement</Button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="7" className="text-center">
-                Aucune donnée trouvée.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-
-      <div className="d-flex justify-content-center align-items-center gap-3 mt-4">
-        <Button
-          variant="outline-primary"
-          onClick={() => handlePagination("prev")}
-          disabled={filters.offset === 0 || loading}
-        >
-          Précédent
-        </Button>
-        <span>
-          Page {Math.floor(filters.offset / filters.limit) + 1} / {Math.ceil(count / filters.limit) || 1}
-        </span>
-        <Button
-          variant="outline-primary"
-          onClick={() => handlePagination("next")}
-          disabled={filters.offset + filters.limit >= count || loading}
-        >
-          Suivant
-        </Button>
+          <Select
+            placeholder="Type de visa"
+            style={{ width: 200 }}
+            onChange={setTypeFilter}
+            value={typeFilter}
+            allowClear
+          >
+            {typesUniques.map(type => (
+              <Option key={type} value={type}>{type}</Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Pays de destination"
+            style={{ width: 200 }}
+            onChange={setPaysFilter}
+            value={paysFilter}
+            allowClear
+          >
+            {paysUniques.map(pays => (
+              <Option key={pays} value={pays}>{pays}</Option>
+            ))}
+          </Select>
+          <Button icon={<FilterOutlined />} onClick={resetFilters}>
+            Réinitialiser
+          </Button>
+        </Space>
       </div>
 
-      {/* 5. Le modal avec ses props */}
+      <div style={{ height: "150px" }}></div>
+
+      <Card style={{ margin: 20 }}>
+        <Table
+          columns={columns}
+          dataSource={filteredVisas}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 1000 }}
+          locale={{ emptyText: "Aucune demande de visa disponible" }}
+        />
+      </Card>
+
+      <Modal
+        title="Détails du visa"
+        open={isDetailModalOpen}
+        onCancel={() => setIsDetailModalOpen(false)}
+        footer={null}
+        width={700}
+      >
+        {currentVisa && (
+          <Descriptions bordered column={2}>
+            <Descriptions.Item label="ID">{currentVisa.id}</Descriptions.Item>
+            <Descriptions.Item label="Date création">
+              {dayjs(currentVisa.createdAt).format("DD/MM/YYYY HH:mm")}
+            </Descriptions.Item>
+            
+            <Descriptions.Item label="Utilisateur" span={2}>
+              {(() => {
+                const userInfo = getUserInfo(currentVisa);
+                return (
+                  <>
+                    <div><strong>Nom :</strong> {userInfo?.nom || 'N/A'}</div>
+                    <div><strong>Prénom :</strong> {userInfo?.prenom || 'N/A'}</div>
+                    <div><strong>Email :</strong> {userInfo?.email || 'N/A'}</div>
+                    
+                  </>
+                );
+              })()}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Pays">{currentVisa.pays}</Descriptions.Item>
+            <Descriptions.Item label="Type Visa">{currentVisa.typeVisa}</Descriptions.Item>
+            <Descriptions.Item label="Nombre de personnes">{currentVisa.personnes}</Descriptions.Item>
+            <Descriptions.Item label="Date d'arrivée">
+              {dayjs(currentVisa.dateArrivee).format("DD/MM/YYYY")}
+            </Descriptions.Item>
+            <Descriptions.Item label="Nationalité">{currentVisa.nationalite}</Descriptions.Item>
+            <Descriptions.Item label="Prix">{currentVisa.total} DA</Descriptions.Item>
+            
+            
+          </Descriptions>
+        )}
+      </Modal>
+
       <ParticipantsModal
-        show={isModalOpen}
-        handleClose={closeModal}
+        show={isParticipantsModalOpen}
+        handleClose={() => setIsParticipantsModalOpen(false)}
         visaId={selectedVisaId}
       />
     </div>
   );
-};
-
-export default ListeVisas;
+}

@@ -2,25 +2,29 @@ const visaService = require('../services/visa.service');
 
 async function createVisa(req, res) {
   try {
-    // Parsing de participants (envoyé sous forme de chaîne JSON)
+    console.log('📥 Données reçues dans req.body:', req.body);
+    console.log('📎 Fichiers reçus dans req.files:', req.files);
+
     const parsedBody = { ...req.body };
     const userId = req.user?.id;
 
-if (!userId) {
-  return res.status(401).json({ error: 'Utilisateur non authentifié' });
-}
+    if (!userId) {
+      console.log('⛔ Utilisateur non authentifié');
+      return res.status(401).json({ error: 'Utilisateur non authentifié' });
+    }
 
     parsedBody.utilisateurInscritId = userId;
-    
 
+    // Parsing des participants
     parsedBody.participants = JSON.parse(req.body.participants);
+    console.log('👥 Participants parsés :', parsedBody.participants);
 
-    // Associer les fichiers aux participants (même ordre)
+    // Associer les fichiers
     if (req.files && req.files.length > 0) {
       let fileIndex = 0;
 
       for (const participant of parsedBody.participants) {
-        const justificatifsCount = parseInt(participant.nbJustificatifs || 1); // tu peux adapter
+        const justificatifsCount = parseInt(participant.nbJustificatifs || 1);
         participant.justificatifs = [];
 
         for (let i = 0; i < justificatifsCount && fileIndex < req.files.length; i++) {
@@ -35,15 +39,24 @@ if (!userId) {
       }
     }
 
-    // Appel du service avec les participants enrichis
+    console.log('✅ Corps final envoyé au service :', parsedBody);
+
+    // Appel du service
     const visa = await visaService.createVisaWithParticipants(parsedBody);
+
+    console.log('🎯 Résultat du service (visa créé) :', visa);
+
+    if (!visa || !visa.id) {
+      console.log('⚠️ Le visa renvoyé ne contient pas de ID');
+    }
 
     res.status(201).json({ message: 'Visa créé avec succès', visa });
   } catch (error) {
-    console.error('Erreur dans createVisa:', error);
+    console.error('❌ Erreur dans createVisa:', error);
     res.status(400).json({ error: error.message || 'Erreur lors de la création du visa' });
   }
 }
+
 const getAllVisas = async (req, res) => {
   try {
     const {
